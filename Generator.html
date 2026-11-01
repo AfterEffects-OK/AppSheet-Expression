@@ -1894,7 +1894,7 @@
           explanation = `構文: CONTAINS(text, substring)\n[${col}] の文字列の中に、指定したキーワード "${kw}" が含まれているかを判定します。`;
           advice = `部分一致による検索やタグの絞り込み、テキストのフィルタリングに便利です。`;
         } else if (category === 'CONCATENATE') {
-          const args = document.getElementById('concat-args']?.value || '[姓], [名]';
+          const args = document.getElementById('concat-args')?.value || '[姓], [名]';
           expression = `CONCATENATE(${args})`;
           explanation = `構文: CONCATENATE(text1, text2, ...)\n指定された複数の要素（${args}）を順番に連結して1つの文字列を作成します。`;
           advice = `氏名の結合や、住所・コードの自動生成（オートナンバー的な連結）によく使用されます。`;
