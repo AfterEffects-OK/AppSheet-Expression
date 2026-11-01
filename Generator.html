@@ -108,19 +108,23 @@
         </div>
 
         <!-- Quick Presets -->
-        <div class="py-3 border-b border-slate-800/80">
-          <p class="text-[11px] text-slate-400 mb-2 flex items-center gap-1">
-            ワンタッププリセット追加:
-          </p>
-          <div class="flex flex-wrap gap-1.5">
-            <button type="button" onclick="addPresetTable('customer')" class="px-2.5 py-1 text-[11px] bg-slate-950/60 hover:bg-slate-800 text-slate-300 rounded-lg border border-slate-800 hover:border-slate-700 transition flex items-center gap-1 cursor-pointer">
-              <i data-lucide="user" class="w-3 h-3 text-blue-400"></i> 顧客マスタ
+        <div class="py-2.5 border-b border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1.5 shrink-0">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-blue-400"></i>
+            プリセットテーブル:
+          </span>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button type="button" onclick="addPresetTable('customer')" class="px-2.5 py-1 text-[11px] bg-slate-950/80 hover:bg-slate-800 text-slate-200 rounded-lg border border-slate-800 hover:border-blue-500/50 transition-all duration-150 flex items-center gap-1.5 cursor-pointer shadow-sm group">
+              <i data-lucide="user" class="w-3 h-3 text-blue-400 group-hover:scale-110 transition-transform"></i> 
+              <span>顧客マスタ</span>
             </button>
-            <button type="button" onclick="addPresetTable('sales')" class="px-2.5 py-1 text-[11px] bg-slate-950/60 hover:bg-slate-800 text-slate-300 rounded-lg border border-slate-800 hover:border-slate-700 transition flex items-center gap-1 cursor-pointer">
-              <i data-lucide="shopping-bag" class="w-3 h-3 text-emerald-400"></i> 売上履歴
+            <button type="button" onclick="addPresetTable('sales')" class="px-2.5 py-1 text-[11px] bg-slate-950/80 hover:bg-slate-800 text-slate-200 rounded-lg border border-slate-800 hover:border-emerald-500/50 transition-all duration-150 flex items-center gap-1.5 cursor-pointer shadow-sm group">
+              <i data-lucide="shopping-bag" class="w-3 h-3 text-emerald-400 group-hover:scale-110 transition-transform"></i> 
+              <span>売上履歴</span>
             </button>
-            <button type="button" onclick="addPresetTable('product')" class="px-2.5 py-1 text-[11px] bg-slate-950/60 hover:bg-slate-800 text-slate-300 rounded-lg border border-slate-800 hover:border-slate-700 transition flex items-center gap-1 cursor-pointer">
-              <i data-lucide="package" class="w-3 h-3 text-amber-400"></i> 商品マスタ
+            <button type="button" onclick="addPresetTable('product')" class="px-2.5 py-1 text-[11px] bg-slate-950/80 hover:bg-slate-800 text-slate-200 rounded-lg border border-slate-800 hover:border-amber-500/50 transition-all duration-150 flex items-center gap-1.5 cursor-pointer shadow-sm group">
+              <i data-lucide="package" class="w-3 h-3 text-amber-400 group-hover:scale-110 transition-transform"></i> 
+              <span>商品マスタ</span>
             </button>
           </div>
         </div>
