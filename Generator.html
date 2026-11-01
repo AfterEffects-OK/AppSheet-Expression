@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ja">
-<head> 
+<head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>AppSheet Expression Builder</title>
@@ -111,7 +111,7 @@
         <div class="py-2.5 border-b border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1.5 shrink-0">
             <i data-lucide="zap" class="w-3.5 h-3.5 text-blue-400"></i>
-            プリセットテーブル:
+            ワンタッププリセット:
           </span>
           <div class="flex flex-wrap items-center gap-1.5">
             <button type="button" onclick="addPresetTable('customer')" class="px-2.5 py-1 text-[11px] bg-slate-950/80 hover:bg-slate-800 text-slate-200 rounded-lg border border-slate-800 hover:border-blue-500/50 transition-all duration-150 flex items-center gap-1.5 cursor-pointer shadow-sm group">
@@ -385,6 +385,7 @@
         {
             id: 'tbl_orders', 
             name: '注文履歴', 
+            isOpen: true,
             columns: [
                 { name: 'ID注文', type: 'Text' }, 
                 { name: 'ID顧客', type: 'Ref' }, 
@@ -402,6 +403,7 @@
         {
             id: 'tbl_customers', 
             name: '顧客マスタ', 
+            isOpen: true,
             columns: [
                 { name: 'ID顧客', type: 'Text' }, 
                 { name: '顧客名', type: 'Text' }, 
@@ -418,6 +420,7 @@
         {
             id: 'tbl_products', 
             name: '商品マスタ', 
+            isOpen: true,
             columns: [
                 { name: 'ID商品', type: 'Text' }, 
                 { name: '商品名', type: 'Text' }, 
@@ -498,6 +501,10 @@
       if (saved) {
         try {
           schema = JSON.parse(saved);
+          // 既存の保存データに isOpen がない場合のフォールバック（デフォルト開く）
+          schema.forEach(tbl => {
+            if (tbl.isOpen === undefined) tbl.isOpen = true;
+          });
         } catch (e) {
           schema = JSON.parse(JSON.stringify(SAMPLE_SCHEMA));
         }
@@ -532,6 +539,7 @@
         schema.push({
           id: 'tbl_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
           name: tblName,
+          isOpen: true, // デフォルトで開いた状態
           columns: columns
         });
 
@@ -624,6 +632,7 @@
           schema.push({
             id: 'tbl_' + Date.now() + '_' + idx,
             name: tblName,
+            isOpen: true,
             columns: columns
           });
 
@@ -718,9 +727,12 @@
           </div>
         `).join('');
 
+        const isOpen = tbl.isOpen !== false; // デフォルトtrue
+
         card.innerHTML = `
-          <div class="flex items-center justify-between pb-2 border-b border-slate-800/80">
-            <div class="flex items-center gap-2">
+          <div class="flex items-center justify-between pb-2 ${isOpen && tbl.columns.length > 0 ? 'border-b border-slate-800/80' : ''}">
+            <div class="flex items-center gap-2 cursor-pointer select-none flex-1" onclick="toggleTableCollapse('${tbl.id}')">
+              <i data-lucide="${isOpen ? 'chevron-down' : 'chevron-right'}" class="w-4 h-4 text-blue-400 transition-transform"></i>
               <i data-lucide="database" class="w-3.5 h-3.5 text-blue-400"></i>
               <span class="font-semibold text-xs text-white">${escapeHtml(tbl.name)}</span>
               <span class="text-[10px] text-slate-500 font-mono">(${tbl.columns.length} Cols)</span>
@@ -732,7 +744,7 @@
               </button>
             </div>
           </div>
-          <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+          <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1 ${isOpen ? '' : 'hidden'}">
             ${colsHTML}
           </div>
         `;
@@ -742,6 +754,15 @@
       lucide.createIcons();
       renderDynamicForm();
     }
+
+    window.toggleTableCollapse = (id) => {
+      const tbl = schema.find(t => t.id === id);
+      if (tbl) {
+        tbl.isOpen = tbl.isOpen === false ? true : false;
+        saveSchema();
+        renderSchema();
+      }
+    };
 
     window.removeTable = (id) => {
       schema = schema.filter(t => t.id !== id);
@@ -780,6 +801,7 @@
       schema.push({
         id: 'tbl_' + Date.now(),
         name: p.name,
+        isOpen: true,
         columns: p.columns.map(c => ({ name: c, type: autoDetectType(c) }))
       });
       saveSchema();
