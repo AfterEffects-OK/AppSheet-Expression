@@ -867,6 +867,43 @@
       updateGeneratedExpression();
     };
 
+    // Ref型カラムが変更されたときに、参照先のテーブルを推測して項目名の選択肢を絞り込む
+    window.onDerefRefColChange = () => {
+      const derefRefColEl = document.getElementById('deref-ref-col');
+      const targetColSelect = document.getElementById('deref-target-col');
+      if (!derefRefColEl || !targetColSelect) return;
+    
+      const selectedVal = derefRefColEl.value; // 例: "注文履歴 : ID顧客"
+      const colName = selectedVal.split(' : ')[1] || '';
+    
+      // カラム名や命名規則から参照先テーブルを自動推測（例: ID顧客 なら 顧客マスタ、ID商品 なら 商品マスタ）
+      let targetTableName = '顧客マスタ'; // デフォルト
+      if (colName.includes('顧客') || colName.includes('Customer')) {
+        targetTableName = '顧客マスタ';
+      } else if (colName.includes('商品') || colName.includes('Product')) {
+        targetTableName = '商品マスタ';
+      } else {
+        // 他のテーブル名と一致するものがあればそれを優先
+        const matchedTable = schema.find(t => colName.toLowerCase().includes(t.name.toLowerCase()));
+        if (matchedTable) {
+          targetTableName = matchedTable.name;
+        }
+      }
+    
+      // 推測した参照先テーブルのスキーマを検索
+      const targetTable = schema.find(t => t.name === targetTableName) || schema[0];
+      
+      if (targetTable && targetTable.columns) {
+        targetColSelect.innerHTML = targetTable.columns
+          .map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${c.type})</option>`)
+          .join('');
+      } else {
+        targetColSelect.innerHTML = '<option value="">(カラムなし)</option>';
+      }
+    
+      updateGeneratedExpression();
+    };
+
     window.onFilterTableChange = () => {
         const tIdx = document.getElementById('filter-target-table')?.value;
         const targetTable = schema[tIdx];
@@ -986,19 +1023,29 @@
         onLookupTableChange();
       } 
       else if (category === 'DEREF') {
+        // 自テーブルのすべてのRef型カラム、または全カラムを取得
+        let refColOptions = '';
+        schema.forEach(tbl => {
+          tbl.columns.forEach(col => {
+            // Ref型、または名前にIDやRefを含むカラムなどを候補にする
+            refColOptions += `<option value="${escapeHtml(tbl.name)} : ${escapeHtml(col.name)}">${escapeHtml(tbl.name)} : ${escapeHtml(col.name)} (${col.type})</option>`;
+          });
+        });
+  
         dynamicInputs.innerHTML = `
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
             <div>
               <label class="block text-slate-400 mb-1.5 font-medium">Ref型の参照カラム（自テーブル）</label>
-              <select id="deref-ref-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">${getAllColumnsFlatOptions()}</select>
+              <select id="deref-ref-col" onchange="onDerefRefColChange()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">${refColOptions}</select>
             </div>
             <div>
               <label class="block text-slate-400 mb-1.5 font-medium">参照先テーブルで取得したい項目名</label>
-              <input type="text" id="deref-target-col" value="顧客名" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+              <select id="deref-target-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500"></select>
             </div>
           </div>
         `;
-        updateGeneratedExpression();
+        // 初期化時に参照先カラムの選択肢を生成
+        onDerefRefColChange();
       }
       else if (category === 'REF_ROWS') {
         dynamicInputs.innerHTML = `
@@ -1702,8 +1749,11 @@
         }
       } 
       else if (category === 'DEREF') {
-        const refCol = document.getElementById('deref-ref-col')?.value || 'RefColumn';
-        const targetCol = document.getElementById('deref-target-col')?.value || 'Column';
+        const refColFull = document.getElementById('deref-ref-col')?.value || '注文履歴 : ID注文';
+        // "テーブル名 : カラム名" から純粋なカラム名部分を抽出
+        const refCol = refColFull.split(' : ')[1] || 'ID注文';
+        const targetCol = document.getElementById('deref-target-col')?.value || '顧客名';
+        
         expression = `[${refCol}].[${targetCol}]`;
         explanation = `Ref型カラム [${refCol}] が参照している先のリレーションテーブルから、指定した [${targetCol}] の値を直接取得（デリファレンス）します。`;
         advice = `LOOKUPよりも処理性能が格段に高く、AppSheetでの最も推奨される参照テクニックです。`;
