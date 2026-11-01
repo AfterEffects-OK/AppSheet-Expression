@@ -10,7 +10,7 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Google Fonts: Inter -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
-  <script>  
+  <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
@@ -262,28 +262,27 @@
       </div>
 
       <!-- Step 3: Expression Output & Explanation Card -->
-      <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex-1 flex flex-col justify-between space-y-4">
-        <div>
-          <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
-            <div class="flex items-center gap-2">
-              <div class="p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg">
-                <i data-lucide="code-2" class="w-4 h-4"></i>
-              </div>
-              <h2 class="font-semibold text-xs text-slate-200 tracking-wide uppercase">3. 生成された AppSheet 式</h2>
+      <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg">
+              <i data-lucide="code-2" class="w-4 h-4"></i>
             </div>
-            <button type="button" id="btn-copy" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-medium text-xs rounded-xl shadow-lg shadow-blue-600/25 flex items-center gap-2 transition cursor-pointer">
-              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
-              クリップボードにコピー
-            </button>
+            <h2 class="font-semibold text-xs text-slate-200 tracking-wide uppercase">3. 生成された AppSheet 式</h2>
           </div>
+          <button type="button" id="btn-copy" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-medium text-xs rounded-xl shadow-lg shadow-blue-600/25 flex items-center gap-2 transition cursor-pointer">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            クリップボードにコピー
+          </button>
+        </div>
 
-          <!-- Output Code Display -->
-          <div class="relative group">
-            <pre class="bg-slate-950 border border-slate-800/80 rounded-xl p-4 overflow-x-auto text-emerald-400 font-mono text-xs sm:text-sm leading-relaxed min-h-[70px] flex items-center shadow-inner"><code id="code-output" class="w-full break-all">-- 生成中 --</code></pre>
-          </div>
+        <!-- Output Code Display -->
+        <div class="relative group">
+          <pre class="bg-slate-950 border border-slate-800/80 rounded-xl p-4 overflow-x-auto text-emerald-400 font-mono text-xs sm:text-sm leading-relaxed min-h-[70px] flex items-center shadow-inner"><code id="code-output" class="w-full break-all">-- 生成中 --</code></pre>
+        </div>
 
-          <!-- Explanation Panel -->
-          <div class="mt-5 space-y-3">
+        <!-- Explanation Panel -->
+        <div class="space-y-3 pt-1">
             <!-- 公式ドキュメントリンク -->
             <div class="flex items-center justify-between bg-slate-950/50 border border-slate-800/80 rounded-xl px-4 py-2.5">
                 <span class="text-xs text-slate-400 whitespace-nowrap">公式ドキュメントで詳細を確認:</span>
@@ -296,7 +295,7 @@
             <!-- 解説パネルとワンポイント（横並びグリッド） -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <!-- 動作解説 -->
-                <div class="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3.5 flex flex-col justify-between">
+                <div class="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3.5 flex flex-col">
                   <h3 class="text-xs font-semibold text-slate-300 flex items-center gap-1.5 mb-2">
                     <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i> 式の動作解説
                   </h3>
@@ -306,7 +305,7 @@
                 </div>
 
                 <!-- ワンポイントアドバイス -->
-                <div class="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3.5 flex flex-col justify-between">
+                <div class="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3.5 flex flex-col">
                   <h3 class="text-xs font-semibold text-amber-400 flex items-center gap-1.5 mb-2">
                     <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-400"></i> AppSheet開発のワンポイント
                   </h3>
@@ -315,7 +314,6 @@
                   </p>
                 </div>
             </div>
-          </div>
         </div>
       </div>
     </main>
@@ -1998,8 +1996,7 @@
       textAdvice.textContent = advice;
       
       const FUNCTION_HELP_URLS = {
-          // 1. 個別ヘルプが存在する主要関数
-          'LOOKUP': 'https://support.google.com/appsheet/answer/10107410?hl=ja',
+          'LOOKUP': 'https://support.google.com/appsheet/answer/10107361?hl=ja',
           'SELECT': 'https://support.google.com/appsheet/answer/10108207?hl=ja',
           'FILTER': 'https://support.google.com/appsheet/answer/10108196?hl=ja',
           'REF_ROWS': 'https://support.google.com/appsheet/answer/10107364?hl=ja',
@@ -2008,40 +2005,6 @@
           'SWITCH': 'https://support.google.com/appsheet/answer/10107912?hl=ja',
           'TODAY_NOW': 'https://support.google.com/appsheet/answer/10107316?hl=ja',
           'USER_INFO': 'https://support.google.com/appsheet/answer/10107319?hl=ja',
-      
-          // 2. 個別URLがない、または一覧ページへ共通化する関数（空欄またはデフォルト一覧へ誘導）
-          'DEREF': 'https://support.google.com/appsheet/table/10104782?hl=ja',
-          'LIST': 'https://support.google.com/appsheet/table/10104782?hl=ja',
-          'SPLIT': '',
-          'INTERSECT': '',
-          'UNIQUE': '',
-          'AGGREGATE': 'https://support.google.com/appsheet/table/10104782?hl=ja',
-          'STDEVP': '',
-          'AND_OR': '',
-          'NOT': '',
-          'EXISTS': '',
-          'ISBLANK': '',
-          'IN': '',
-          'CONTAINS': '',
-          'CONCATENATE': '',
-          'TEXT': '',
-          'LEFT_RIGHT_MID': '',
-          'SUBSTITUTE': '',
-          'INDEX': '',
-          'LOWER_UPPER': '',
-          'DATE_CONSTRUCT': '',
-          'WORKDAY': '',
-          'EOMONTH': '',
-          'CONTEXT': '',
-          'ROUND': '',
-          'ABS': '',
-          'RANDBETWEEN': '',
-          'COMPOSITE_IF_SUM': '',
-          'COMPOSITE_ISBLANK_FILTER': '',
-          'COMPOSITE_INDEX_SPLIT': '',
-          'COMPOSITE_IN_SELECT': '',
-      
-          // 3. デフォルト（上記以外ですべての関数を網羅している公式一覧ページ）
           'DEFAULT': 'https://support.google.com/appsheet/table/10104782?hl=ja'
       };
 
