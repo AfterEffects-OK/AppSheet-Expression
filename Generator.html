@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AppSheet Expression Builder</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>  
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['Fira Code', 'monospace'],
+          },
+          colors: {
+            appsheet: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0066ff',
+              600: '#0052cc',
+              700: '#003d99',
+              800: '#1e293b',
+              900: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom Scrollbar for sleek code panels */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-blue-600 selection:text-white">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md sticky top-0 z-50 shadow-lg shadow-slate-950/20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-gradient-to-tr from-blue-600 to-indigo-600 p-2.5 rounded-xl text-white shadow-md shadow-blue-500/20 ring-1 ring-white/10">
+          <i data-lucide="layers" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2">
+            AppSheet Expression Builder
+            <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">v3.1 Smart UI</span>
+          </h1>
+          <p class="text-[11px] text-slate-400 hidden sm:block">テーブル構造からAppSheet全関数構文を自動生成・解説</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <button id="btn-open-import-modal" class="px-3 py-1.5 text-xs font-medium text-slate-200 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded-xl shadow-md shadow-blue-600/20 transition flex items-center gap-1.5 cursor-pointer">
+          <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">一括インポート / CSV</span>
+        </button>
+        <button id="btn-load-sample" class="px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800/80 hover:bg-slate-700 hover:text-white rounded-xl border border-slate-700/80 transition flex items-center gap-1.5 cursor-pointer">
+          <i data-lucide="database" class="w-3.5 h-3.5 text-blue-400"></i>
+          <span class="hidden sm:inline">サンプル</span>
+        </button>
+        <button id="btn-clear-all" class="px-2.5 py-1.5 text-xs font-medium text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 rounded-xl border border-rose-500/20 transition flex items-center gap-1 cursor-pointer" title="全クリア">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        </button>
+        <div class="h-4 w-px bg-slate-800 mx-1"></div>
+        <button type="button" onclick="openHelpModal()" class="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs rounded-xl border border-slate-700/80 transition flex items-center gap-1.5 cursor-pointer">
+          <i data-lucide="help-circle" class="w-3.5 h-3.5 text-blue-400"></i>
+          <span class="hidden sm:inline">使い方</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+    <!-- Left Sidebar: Schema Manager (5 cols) -->
+    <section class="lg:col-span-5 flex flex-col gap-4">
+      <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-5 shadow-xl backdrop-blur-sm flex flex-col">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 bg-blue-500/10 text-blue-400 rounded-lg">
+              <i data-lucide="table" class="w-4 h-4"></i>
+            </div>
+            <h2 class="font-semibold text-xs text-slate-200 tracking-wide uppercase">1. スキーマ（テーブル構造）</h2>
+          </div>
+          <span class="text-xs text-slate-400">テーブル数: <strong id="stat-table-count" class="text-blue-400 font-mono">0</strong></span>
+        </div>
+
+        <!-- Quick Presets -->
+        <div class="py-3 border-b border-slate-800/80">
+          <p class="text-[11px] text-slate-400 mb-2 flex items-center gap-1">
+            ワンタッププリセット追加:
+          </p>
+          <div class="flex flex-wrap gap-1.5">
+            <button type="button" onclick="addPresetTable('customer')" class="px-2.5 py-1 text-[11px] bg-slate-950/60 hover:bg-slate-800 text-slate-300 rounded-lg border border-slate-800 hover:border-slate-700 transition flex items-center gap-1 cursor-pointer">
+              <i data-lucide="user" class="w-3 h-3 text-blue-400"></i> 顧客マスタ
+            </button>
+            <button type="button" onclick="addPresetTable('sales')" class="px-2.5 py-1 text-[11px] bg-slate-950/60 hover:bg-slate-800 text-slate-300 rounded-lg border border-slate-800 hover:border-slate-700 transition flex items-center gap-1 cursor-pointer">
+              <i data-lucide="shopping-bag" class="w-3 h-3 text-emerald-400"></i> 売上履歴
+            </button>
+            <button type="button" onclick="addPresetTable('product')" class="px-2.5 py-1 text-[11px] bg-slate-950/60 hover:bg-slate-800 text-slate-300 rounded-lg border border-slate-800 hover:border-slate-700 transition flex items-center gap-1 cursor-pointer">
+              <i data-lucide="package" class="w-3 h-3 text-amber-400"></i> 商品マスタ
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick One-Line Creation Box -->
+        <div class="pt-3 pb-2">
+          <form id="form-quick-add" class="space-y-2">
+            <div class="flex items-center gap-2">
+              <input type="text" id="quick-tbl-name" placeholder="テーブル名 (例: 注文明細)" 
+                class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+              <button type="submit" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-medium rounded-xl transition flex items-center gap-1 shrink-0 cursor-pointer shadow-md shadow-blue-600/20">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> 追加
+              </button>
+            </div>
+            <textarea id="quick-col-list" rows="2" placeholder="カンマ、タブ、または行データをそのまま貼り付け (例: ID注文	ID顧客	金額)" 
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[11px] text-slate-300 font-mono focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition placeholder:text-slate-600 resize-none"></textarea>
+          </form>
+        </div>
+
+        <!-- Table List Container -->
+        <div id="schema-container" class="flex-1 overflow-y-auto my-2 space-y-3 pr-1 max-h-[calc(100vh-340px)]">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-500 flex items-center justify-between">
+          <span class="flex items-center gap-1">
+            <i data-lucide="hard-drive" class="w-3 h-3 text-blue-500"></i> localStorage自動保存有効
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Workspace: Generator & Output (7 cols) -->
+    <main class="lg:col-span-7 space-y-6 flex flex-col">
+
+      <!-- Step 2: Expression Generator Workspace Card -->
+      <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-5 shadow-xl backdrop-blur-sm space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 bg-blue-500/10 text-blue-400 rounded-lg">
+              <i data-lucide="wand-2" class="w-4 h-4"></i>
+            </div>
+            <h2 class="font-semibold text-xs text-slate-200 tracking-wide uppercase">2. 生成したい処理の設定</h2>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">関数の検索・フィルタ</label>
+              <div class="relative">
+                <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5"></i>
+                <input type="text" id="input-func-search" placeholder="関数名で検索 (例: CONCATENATE...)" 
+                  class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+              </div>
+            </div>
+
+            <div class="flex items-end pb-1 justify-end">
+              <label class="inline-flex items-center cursor-pointer select-none bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800/80 hover:border-slate-700 transition">
+                <input type="checkbox" id="toggle-thisrow" class="sr-only peer" checked>
+                <div class="relative w-8 h-4 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"></div>
+                <span class="ms-2 text-xs font-medium text-slate-300 flex items-center gap-1">
+                  <code class="text-blue-400 font-mono text-[11px]">[_THISROW].</code> プレフィックス
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1.5">生成パターン（関数の選択）</label>
+            <select id="select-category" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+              <optgroup label="参照・リレーション (Ref & Lookup)">
+                <option value="LOOKUP">LOOKUP（他テーブルから1項目取得）</option>
+                <option value="DEREF">De-Reference ( [Ref列].[項目名] 形式の直接参照 )</option>
+                <option value="REF_ROWS">REF_ROWS（関連レコード一覧の自動取得）</option>
+              </optgroup>
+              <optgroup label="リスト・抽出 (List & Filter)">
+                <option value="SELECT">SELECT（条件に一致するリスト抽出）</option>
+                <option value="FILTER">FILTER（条件に一致する行キーのリスト抽出）</option>
+                <option value="LIST">LIST（任意の値からリストを作成）</option>
+                <option value="SPLIT">SPLIT（文字列を区切り文字で分割してリスト化）</option>
+                <option value="INTERSECT">INTERSECT（2つのリストの積集合/共通要素）</option>
+                <option value="UNIQUE">UNIQUE（リストから重複を除去）</option>
+              </optgroup>
+              <optgroup label="集計・計算 (Aggregation)">
+                <option value="AGGREGATE">SUM / COUNT / AVERAGE / MAX / MIN + SELECT</option>
+                <option value="STDEVP">STDEVP（リストの標準偏差の算出）</option>
+              </optgroup>
+              <optgroup label="条件・制御 (Conditional Logic)">
+                <option value="IFS">IFS（多岐条件分岐）</option>
+                <option value="SWITCH">SWITCH（値の一致による多岐分岐）</option>
+                <option value="IF">IF（単純な真偽分岐）</option>
+                <option value="AND_OR">AND / OR（複数条件の論理結合）</option>
+                <option value="NOT">NOT（条件の反転）</option>
+              </optgroup>
+              <optgroup label="論理・チェック (Validation & Logic)">
+                <option value="EXISTS">存在・重複チェック（ISBLANK + FILTER / COUNT）</option>
+                <option value="ISBLANK">ISBLANK / ISNOTBLANK（空・非空チェック）</option>
+                <option value="IN">IN（値がリストに含まれるか判定）</option>
+                <option value="CONTAINS">CONTAINS（部分一致・文字列判定）</option>
+              </optgroup>
+              <optgroup label="文字列操作 (Text Manipulation)">
+                <option value="CONCATENATE">CONCATENATE（文字列の結合）</option>
+                <option value="TEXT">TEXT（数値・日付のフォーマット変換）</option>
+                <option value="LEFT_RIGHT_MID">LEFT / RIGHT / MID（文字列の一部の抽出）</option>
+                <option value="SUBSTITUTE">SUBSTITUTE（文字列の置換）</option>
+                <option value="INDEX">INDEX（リストから指定位置の要素を取得）</option>
+                <option value="LOWER_UPPER">LOWER / UPPER（大文字・小文字変換）</option>
+              </optgroup>
+              <optgroup label="日付・時刻 (Date & Time)">
+                <option value="TODAY_NOW">TODAY / NOW / TIMENOW（現在日時・時刻）</option>
+                <option value="DATE_CONSTRUCT">DATE / TIME / DATETIME（日時オブジェクト作成）</option>
+                <option value="WORKDAY">WORKDAY（営業日・稼働日計算）</option>
+                <option value="EOMONTH">EOMONTH（月末日の算出）</option>
+              </optgroup>
+              <optgroup label="ユーザー・環境 (User & Context)">
+                <option value="USER_INFO">USEREMAIL / USERNAME / USERROLE（ログイン情報）</option>
+                <option value="CONTEXT">CONTEXT("View") / CONTEXT("AppName")（画面情報）</option>
+              </optgroup>
+              <optgroup label="数学・数値 (Math & Numbers)">
+                <option value="ROUND">ROUND / CEILING / FLOOR（端数処理・切り上げ切り捨て）</option>
+                <option value="ABS">ABS（絶対値の計算）</option>
+                <option value="RANDBETWEEN">RANDBETWEEN（指定範囲のランダム整数の生成）</option>
+              </optgroup>
+              <optgroup label="高度な合成関数 (Advanced Composition)">
+                <option value="COMPOSITE_IF_SUM">条件付き集計のしきい値判定 (IF + SUM + SELECT)</option>
+                <option value="COMPOSITE_ISBLANK_FILTER">重複登録防止バリデーション (ISBLANK + FILTER)</option>
+                <option value="COMPOSITE_INDEX_SPLIT">リスト要素の抽出 (INDEX + SPLIT)</option>
+                <option value="COMPOSITE_IN_SELECT">権限・存在判定 (IN + SELECT)</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+
+        <!-- Dynamic Inputs Area -->
+        <div id="dynamic-inputs" class="bg-slate-950/40 rounded-xl p-4 border border-slate-800/80 space-y-4">
+          <!-- Dynamic form injected by JS -->
+        </div>
+      </div>
+
+      <!-- Step 3: Expression Output & Explanation Card -->
+      <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm flex-1 flex flex-col justify-between space-y-4">
+        <div>
+          <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+            <div class="flex items-center gap-2">
+              <div class="p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg">
+                <i data-lucide="code-2" class="w-4 h-4"></i>
+              </div>
+              <h2 class="font-semibold text-xs text-slate-200 tracking-wide uppercase">3. 生成された AppSheet 式</h2>
+            </div>
+            <button type="button" id="btn-copy" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-medium text-xs rounded-xl shadow-lg shadow-blue-600/25 flex items-center gap-2 transition cursor-pointer">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              クリップボードにコピー
+            </button>
+          </div>
+
+          <!-- Output Code Display -->
+          <div class="relative group">
+            <pre class="bg-slate-950 border border-slate-800/80 rounded-xl p-4 overflow-x-auto text-emerald-400 font-mono text-xs sm:text-sm leading-relaxed min-h-[70px] flex items-center shadow-inner"><code id="code-output" class="w-full break-all">-- 生成中 --</code></pre>
+          </div>
+
+          <!-- Explanation Panel -->
+          <div class="mt-5 space-y-3">
+            <!-- 公式ドキュメントリンク -->
+            <div class="flex items-center justify-between bg-slate-950/50 border border-slate-800/80 rounded-xl px-4 py-2.5">
+                <span class="text-xs text-slate-400 whitespace-nowrap">公式ドキュメントで詳細を確認:</span>
+                <a id="link-official-help" href="https://support.google.com/appsheet/table/10104782?hl=ja" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 hover:text-blue-300 text-xs rounded-lg border border-blue-500/20 transition flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                    <span>Google公式ヘルプを開く</span>
+                </a>
+            </div>
+
+            <!-- 解説パネルとワンポイント（横並びグリッド） -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <!-- 動作解説 -->
+                <div class="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3.5 flex flex-col justify-between">
+                  <h3 class="text-xs font-semibold text-slate-300 flex items-center gap-1.5 mb-2">
+                    <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i> 式の動作解説
+                  </h3>
+                  <p id="text-explanation" class="text-xs text-slate-400 leading-relaxed">
+                    選択したパターンとパラメータに基づいて説明が表示されます。
+                  </p>
+                </div>
+
+                <!-- ワンポイントアドバイス -->
+                <div class="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3.5 flex flex-col justify-between">
+                  <h3 class="text-xs font-semibold text-amber-400 flex items-center gap-1.5 mb-2">
+                    <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-400"></i> AppSheet開発のワンポイント
+                  </h3>
+                  <p id="text-advice" class="text-xs text-amber-200/80 leading-relaxed">
+                    AppSheetでの実装における注意点やパフォーマンス上のヒントが表示されます。
+                  </p>
+                </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Import Modal -->
+  <div id="import-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-200">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-semibold text-slate-100 flex items-center gap-2 text-sm">
+          <i data-lucide="file-spreadsheet" class="w-4 h-4 text-blue-400"></i>
+          複数スキーマ一括インポート
+        </h3>
+        <button type="button" id="btn-close-modal" class="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Drag & Drop / File Select -->
+      <div id="drop-zone" class="border-2 border-dashed border-slate-700/80 hover:border-blue-500 rounded-xl p-5 text-center bg-slate-950/50 cursor-pointer transition">
+        <i data-lucide="upload-cloud" class="w-7 h-7 text-blue-400 mx-auto mb-2 opacity-90"></i>
+        <p class="text-xs text-slate-300 font-medium mb-1">CSVまたはTSVファイルをドラッグ＆ドロップ</p>
+        <p class="text-[11px] text-slate-500 mb-3">（1レコード＝1スキーマ、複数行の一括取り込みに対応）</p>
+        <input type="file" id="file-input" accept=".csv,.tsv,.txt" class="hidden">
+        <button type="button" onclick="document.getElementById('file-input').click()" class="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 transition cursor-pointer">
+          ファイルを選択
+        </button>
+      </div>
+
+      <div class="relative flex py-1 items-center">
+        <div class="flex-grow border-t border-slate-800"></div>
+        <span class="flex-shrink mx-3 text-[11px] text-slate-500">または スプレッドシート行の貼り付け</span>
+        <div class="flex-grow border-t border-slate-800"></div>
+      </div>
+
+      <!-- Paste Text Area -->
+      <div class="space-y-1.5">
+        <label class="text-xs text-slate-400 block">複数行のデータをそのまま貼り付け（A列が先頭項目になります）</label>
+        <textarea id="modal-paste-text" rows="5" placeholder="例:&#10;ID注文	ID顧客	金額	注文日	ステータス&#10;ID顧客	顧客名	メールアドレス	会員ランク" 
+          class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500 placeholder:text-slate-600 resize-none"></textarea>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button type="button" id="btn-cancel-modal" class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white rounded-xl transition cursor-pointer">
+          キャンセル
+        </button>
+
+        <button type="button" id="btn-submit-import" class="px-4 py-2 text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center gap-1.5 cursor-pointer">
+          <i data-lucide="check" class="w-3.5 h-3.5"></i> 一括インポート実行
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 translate-y-20 opacity-0 transition-all duration-300 z-50 pointer-events-none ring-1 ring-white/10">
+    <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+    <span id="toast-message" class="text-xs font-medium">クリップボードにコピーしました！</span>
+  </div>
+
+  <!-- JavaScript App Logic -->
+  <script>
+    // Initial Sample Data Schema
+    const SAMPLE_SCHEMA = [
+        {
+            id: 'tbl_orders', 
+            name: '注文履歴', 
+            columns: [
+                { name: 'ID注文', type: 'Text' }, 
+                { name: 'ID顧客', type: 'Ref' }, 
+                { name: '金額', type: 'Price' }, 
+                { name: '注文日', type: 'Date' }, 
+                { name: 'ステータス', type: 'Text' },
+                { name: '作成日時', type: 'DateTime' }, 
+                { name: '編集日時', type: 'DateTime' }, 
+                { name: '作成者Email', type: 'Email' }, 
+                { name: '編集者Email', type: 'Email' }, 
+                { name: 'フラグ', type: 'Yes/No' }, 
+                { name: 'メモ', type: 'LongText' }
+            ] 
+        }, 
+        {
+            id: 'tbl_customers', 
+            name: '顧客マスタ', 
+            columns: [
+                { name: 'ID顧客', type: 'Text' }, 
+                { name: '顧客名', type: 'Text' }, 
+                { name: 'メールアドレス', type: 'Email' }, 
+                { name: '会員ランク', type: 'Text' },
+                { name: '作成日時', type: 'DateTime' }, 
+                { name: '編集日時', type: 'DateTime' }, 
+                { name: '作成者Email', type: 'Email' }, 
+                { name: '編集者Email', type: 'Email' }, 
+                { name: 'フラグ', type: 'Yes/No' }, 
+                { name: 'メモ', type: 'LongText' }
+            ] 
+        }, 
+        {
+            id: 'tbl_products', 
+            name: '商品マスタ', 
+            columns: [
+                { name: 'ID商品', type: 'Text' }, 
+                { name: '商品名', type: 'Text' }, 
+                { name: '単価', type: 'Price' }, 
+                { name: '在庫数', type: 'Number' },
+                { name: '作成日時', type: 'DateTime' }, 
+                { name: '編集日時', type: 'DateTime' }, 
+                { name: '作成者Email', type: 'Email' }, 
+                { name: '編集者Email', type: 'Email' }, 
+                { name: 'フラグ', type: 'Yes/No' }, 
+                { name: 'メモ', type: 'LongText' }
+            ] 
+        }
+    ];
+
+    const PRESETS_DATA = {
+        customer: {
+            name: '顧客マスタ', 
+            columns: [
+                'ID顧客', '顧客名', 'メールアドレス', '電話番号', '会員ランク', '登録日',
+                '作成日時', '編集日時', '作成者Email', '編集者Email', 'フラグ', 'メモ'
+            ]
+        }, 
+        sales: {
+            name: '売上履歴', 
+            columns: [
+                'ID売上', 'ID顧客', '担当者', '合計金額', '売上日時', '支払ステータス',
+                '作成日時', '編集日時', '作成者Email', '編集者Email', 'フラグ', 'メモ'
+            ]
+        }, 
+        product: {
+            name: '商品マスタ', 
+            columns: [
+                'ID商品', '商品名', 'カテゴリ', '販売単価', '原価', '在庫数',
+                '作成日時', '編集日時', '作成者Email', '編集者Email', 'フラグ', 'メモ'
+            ]
+        }
+    };
+
+    const COLUMN_TYPES = ['Text', 'Number', 'Price', 'Date', 'DateTime', 'Ref', 'Email', 'Enum', 'Yes/No'];
+
+    // State
+    let schema = [];
+    const STORAGE_KEY = 'appsheet_builder_schema_v1';
+
+    // DOM Elements
+    const schemaContainer = document.getElementById('schema-container');
+    const selectCategory = document.getElementById('select-category');
+    const toggleThisRow = document.getElementById('toggle-thisrow');
+    const dynamicInputs = document.getElementById('dynamic-inputs');
+    const codeOutput = document.getElementById('code-output');
+    const textExplanation = document.getElementById('text-explanation');
+    const textAdvice = document.getElementById('text-advice');
+    const statTableCount = document.getElementById('stat-table-count');
+
+    // Modal Elements
+    const importModal = document.getElementById('import-modal');
+    const btnOpenModal = document.getElementById('btn-open-import-modal');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const btnCancelModal = document.getElementById('btn-cancel-modal');
+    const btnSubmitImport = document.getElementById('btn-submit-import');
+    const modalPasteText = document.getElementById('modal-paste-text');
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+
+    // Init
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSchema();
+      renderSchema();
+      renderDynamicForm();
+      initEvents();
+      initModalEvents();
+      lucide.createIcons();
+    });
+
+    function loadSchema() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        try {
+          schema = JSON.parse(saved);
+        } catch (e) {
+          schema = JSON.parse(JSON.stringify(SAMPLE_SCHEMA));
+        }
+      } else {
+        schema = JSON.parse(JSON.stringify(SAMPLE_SCHEMA));
+      }
+    }
+
+    function saveSchema() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(schema));
+      statTableCount.textContent = schema.length;
+      renderDynamicForm();
+    }
+
+    function initEvents() {
+      document.getElementById('form-quick-add').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const tblNameInput = document.getElementById('quick-tbl-name');
+        const colListInput = document.getElementById('quick-col-list');
+
+        const tblName = tblNameInput.value.trim() || ('新規テーブル_' + (schema.length + 1));
+        
+        const rawCols = colListInput.value
+          .split(/[\n\r\t,]+/)
+          .map(c => c.trim())
+          .filter(Boolean);
+
+        const columns = rawCols.length > 0 
+          ? rawCols.map(c => ({ name: c, type: autoDetectType(c) }))
+          : [{ name: 'ID', type: 'Text' }];
+
+        schema.push({
+          id: 'tbl_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+          name: tblName,
+          columns: columns
+        });
+
+        tblNameInput.value = '';
+        colListInput.value = '';
+
+        saveSchema();
+        renderSchema();
+        showToast(`テーブル「${tblName}」を作成しました`);
+      });
+
+      document.getElementById('btn-load-sample').addEventListener('click', () => {
+        schema = JSON.parse(JSON.stringify(SAMPLE_SCHEMA));
+        saveSchema();
+        renderSchema();
+        showToast('サンプルデータを取り込みました');
+      });
+
+      document.getElementById('btn-clear-all').addEventListener('click', () => {
+        if (confirm('登録されたテーブル定義をすべて消去しますか？')) {
+          schema = [];
+          saveSchema();
+          renderSchema();
+          showToast('すべてのテーブルをクリアしました');
+        }
+      });
+
+      selectCategory.addEventListener('change', renderDynamicForm);
+      toggleThisRow.addEventListener('change', updateGeneratedExpression);
+      document.getElementById('btn-copy').addEventListener('click', copyToClipboard);
+
+      document.getElementById('input-func-search').addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const options = selectCategory.querySelectorAll('option');
+        
+        options.forEach(opt => {
+          const text = opt.textContent.toLowerCase();
+          const val = opt.value.toLowerCase();
+          if (!query || text.includes(query) || val.includes(query)) {
+            opt.style.display = '';
+          } else {
+            opt.style.display = 'none';
+          }
+        });
+      });
+    }
+
+    function initModalEvents() {
+      btnOpenModal.addEventListener('click', () => {
+        importModal.classList.remove('opacity-0', 'pointer-events-none');
+      });
+
+      const closeModal = () => {
+        importModal.classList.add('opacity-0', 'pointer-events-none');
+        modalPasteText.value = '';
+      };
+
+      btnCloseModal.addEventListener('click', closeModal);
+      btnCancelModal.addEventListener('click', closeModal);
+
+      btnSubmitImport.addEventListener('click', () => {
+        const text = modalPasteText.value.trim();
+        if (!text) {
+          alert('インポートするテキストを入力してください。');
+          return;
+        }
+
+        const lines = text.split(/[\r\n]+/);
+        let importedCount = 0;
+
+        lines.forEach((line, idx) => {
+          const trimmedLine = line.trim();
+          if (!trimmedLine) return;
+
+          const rawCols = trimmedLine
+            .split(/[\t,]+/)
+            .map(c => c.trim())
+            .filter(Boolean);
+
+          if (rawCols.length === 0) return;
+
+          let colA = rawCols[0];
+          let tblName = colA.replace(/^ID/, '').trim();
+          if (!tblName) {
+            tblName = 'テーブル_' + (schema.length + 1);
+          }
+
+          const columns = rawCols.map(c => ({ name: c, type: autoDetectType(c) }));
+
+          schema.push({
+            id: 'tbl_' + Date.now() + '_' + idx,
+            name: tblName,
+            columns: columns
+          });
+
+          importedCount++;
+        });
+
+        if (importedCount === 0) {
+          alert('有効なスキーマ行が見つかりませんでした。');
+          return;
+        }
+
+        saveSchema();
+        renderSchema();
+        closeModal();
+        showToast(`${importedCount}件のテーブルを一括インポートしました！`);
+      });
+
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-blue-500');
+      });
+
+      dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('border-blue-500');
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-blue-500');
+        if (e.dataTransfer.files.length > 0) {
+          handleFile(e.dataTransfer.files[0]);
+        }
+      });
+
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          handleFile(e.target.files[0]);
+        }
+      });
+    }
+
+    function handleFile(file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        modalPasteText.value = e.target.result;
+      };
+      reader.readAsText(file);
+    }
+
+    function autoDetectType(name) {
+        if (name.startsWith('ID') || name.includes('コード')) return 'Text';
+        if (name.includes('日') && !name.includes('日時') || name.includes('Date')) return 'Date';
+        if (name.includes('日時') || name.includes('時間') || name.includes('作成日時') || name.includes('編集日時')) return 'DateTime';
+        if (name.includes('金額') || name.includes('単価') || name.includes('価格')) return 'Price';
+        if (name.includes('数') || name.includes('数量') || name.includes('ポイント') || name.includes('在庫数')) return 'Number';
+        if (name.includes('メール') || name.includes('Email')) return 'Email';
+        if (name.includes('フラグ')) return 'Yes/No';
+        if (name.includes('メモ')) return 'LongText';
+        return 'Text';
+    }
+
+    function renderSchema() {
+      schemaContainer.innerHTML = '';
+
+      if (schema.length === 0) {
+        schemaContainer.innerHTML = `
+          <div class="text-center py-10 text-slate-500 text-xs">
+            <p>登録されているテーブルはありません。</p>
+            <p class="mt-1">上のフォームまたはサンプル読み込みをご利用ください。</p>
+          </div>
+        `;
+        statTableCount.textContent = '0';
+        renderDynamicForm();
+        return;
+      }
+
+      statTableCount.textContent = schema.length;
+
+      schema.forEach((tbl, tIdx) => {
+        const card = document.createElement('div');
+        card.className = 'bg-slate-950/70 border border-slate-800/80 rounded-xl p-3.5 space-y-2 hover:border-slate-700 transition';
+        
+        const colsHTML = tbl.columns.map((col, cIdx) => `
+          <div class="flex items-center justify-between bg-slate-900/60 px-2.5 py-1.5 rounded-lg text-xs group/col">
+            <div class="flex items-center gap-2">
+              <span class="text-slate-200 font-medium">${escapeHtml(col.name)}</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-blue-400 border border-slate-700/60">${col.type}</span>
+            </div>
+            <button type="button" onclick="removeColumn('${tbl.id}', ${cIdx})" class="text-slate-500 hover:text-rose-400 p-0.5 transition cursor-pointer" title="カラムを削除">
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `).join('');
+
+        card.innerHTML = `
+          <div class="flex items-center justify-between pb-2 border-b border-slate-800/80">
+            <div class="flex items-center gap-2">
+              <i data-lucide="database" class="w-3.5 h-3.5 text-blue-400"></i>
+              <span class="font-semibold text-xs text-white">${escapeHtml(tbl.name)}</span>
+              <span class="text-[10px] text-slate-500 font-mono">(${tbl.columns.length} Cols)</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button type="button" onclick="addColumnPrompt('${tbl.id}')" class="text-[11px] text-blue-400 hover:text-blue-300 px-2 py-0.5 bg-blue-500/10 hover:bg-blue-500/20 rounded-lg transition cursor-pointer">＋列追加</button>
+              <button type="button" onclick="removeTable('${tbl.id}')" class="text-slate-500 hover:text-rose-400 p-1 rounded-lg hover:bg-rose-500/10 transition cursor-pointer" title="テーブル削除">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+          <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+            ${colsHTML}
+          </div>
+        `;
+        schemaContainer.appendChild(card);
+      });
+
+      lucide.createIcons();
+      renderDynamicForm();
+    }
+
+    window.removeTable = (id) => {
+      schema = schema.filter(t => t.id !== id);
+      saveSchema();
+      renderSchema();
+      showToast('テーブルを削除しました');
+    };
+
+    window.removeColumn = (tblId, cIdx) => {
+      const tbl = schema.find(t => t.id === tblId);
+      if (tbl && tbl.columns.length > 1) {
+        tbl.columns.splice(cIdx, 1);
+        saveSchema();
+        renderSchema();
+      } else {
+        alert('最低1つのカラムが必要です。');
+      }
+    };
+
+    window.addColumnPrompt = (tblId) => {
+      const colName = prompt('追加するカラム名を入力してください:');
+      if (colName && colName.trim()) {
+        const tbl = schema.find(t => t.id === tblId);
+        if (tbl) {
+          tbl.columns.push({ name: colName.trim(), type: autoDetectType(colName.trim()) });
+          saveSchema();
+          renderSchema();
+        }
+      }
+    };
+
+    window.addPresetTable = (key) => {
+      const p = PRESETS_DATA[key];
+      if (!p) return;
+
+      schema.push({
+        id: 'tbl_' + Date.now(),
+        name: p.name,
+        columns: p.columns.map(c => ({ name: c, type: autoDetectType(c) }))
+      });
+      saveSchema();
+      renderSchema();
+      showToast(`プリセット「${p.name}」を追加しました`);
+    };
+
+    function getAllColumnsFlatOptions() {
+      let html = '';
+      schema.forEach(tbl => {
+        tbl.columns.forEach(col => {
+          html += `<option value="${escapeHtml(col.name)}">${escapeHtml(tbl.name)} : ${escapeHtml(col.name)}</option>`;
+        });
+      });
+      return html;
+    }
+
+    window.insertColumnToInput = (inputElId, colBracketName) => {
+        const inputEl = document.getElementById(inputElId);
+        if (!inputEl) return;
+        const start = inputEl.selectionStart;
+        const end = inputEl.selectionEnd;
+        const val = inputEl.value;
+        inputEl.value = val.substring(0, start) + colBracketName + val.substring(end);
+        inputEl.focus();
+        inputEl.selectionStart = inputEl.selectionEnd = start + colBracketName.length;
+        updateGeneratedExpression();
+    };
+
+    window.insertColumnToFilter = (colBracketName) => {
+      const inputEl = document.getElementById('filter-cond-expr');
+      if (!inputEl) return;
+      const start = inputEl.selectionStart;
+      const end = inputEl.selectionEnd;
+      const val = inputEl.value;
+      inputEl.value = val.substring(0, start) + colBracketName + val.substring(end);
+      inputEl.focus();
+      inputEl.selectionStart = inputEl.selectionEnd = start + colBracketName.length;
+      updateGeneratedExpression();
+    };
+
+    window.onLookupTableChange = () => {
+      const tIdx = document.getElementById('lookup-target-table').value;
+      const targetTable = schema[tIdx];
+      if (!targetTable) return;
+
+      const colsHTML = targetTable.columns.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${c.type})</option>`).join('');
+      document.getElementById('lookup-result-col').innerHTML = colsHTML;
+      document.getElementById('lookup-match-col').innerHTML = colsHTML;
+
+      updateGeneratedExpression();
+    };
+
+    window.onSelectTableChange = () => {
+      const tIdx = document.getElementById('select-target-table').value;
+      const targetTable = schema[tIdx];
+      if (!targetTable) return;
+
+      const colsHTML = targetTable.columns.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${c.type})</option>`).join('');
+      document.getElementById('select-target-col').innerHTML = colsHTML;
+      document.getElementById('select-cond-col').innerHTML = colsHTML;
+
+      updateGeneratedExpression();
+    };
+
+    window.onFilterTableChange = () => {
+        const tIdx = document.getElementById('filter-target-table')?.value;
+        const targetTable = schema[tIdx];
+        const sel = document.getElementById('filter-col-selector');
+        if (!sel) return;
+        
+        if (!targetTable || !targetTable.columns) {
+            sel.innerHTML = '';
+            updateGeneratedExpression();
+            return;
+        }
+        
+        sel.innerHTML = targetTable.columns.map(c => `<option value="[${escapeHtml(c.name)}]">[${escapeHtml(c.name)}] (${c.type})</option>`).join('');
+        updateGeneratedExpression();
+    };
+
+    window.onAggTableChange = () => {
+      const tIdx = document.getElementById('agg-target-table').value;
+      const targetTable = schema[tIdx];
+      if (!targetTable) return;
+
+      const colsHTML = targetTable.columns.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${c.type})</option>`).join('');
+      document.getElementById('agg-target-col').innerHTML = colsHTML;
+      document.getElementById('agg-cond-col').innerHTML = colsHTML;
+
+      updateGeneratedExpression();
+    };
+
+    window.onExistTableChange = () => {
+      const tIdx = document.getElementById('exist-target-table').value;
+      const targetTable = schema[tIdx];
+      if (!targetTable) return;
+
+      const colsHTML = targetTable.columns.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${c.type})</option>`).join('');
+      document.getElementById('exist-target-col').innerHTML = colsHTML;
+
+      updateGeneratedExpression();
+    };
+
+    window.onCompSumTableChange = () => {
+      const tIdx = document.getElementById('comp-sum-table')?.value;
+      const targetTable = schema[tIdx];
+      if (!targetTable) return;
+      const colsHTML = targetTable.columns.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${c.type})</option>`).join('');
+      document.getElementById('comp-sum-col').innerHTML = colsHTML;
+      document.getElementById('comp-sum-cond').innerHTML = colsHTML;
+      updateGeneratedExpression();
+    };
+    
+    window.onCompDupTableChange = () => {
+      const tIdx = document.getElementById('comp-dup-table')?.value;
+      const targetTable = schema[tIdx];
+      if (!targetTable) return;
+      const colsHTML = targetTable.columns.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${c.type})</option>`).join('');
+      document.getElementById('comp-dup-col').innerHTML = colsHTML;
+      updateGeneratedExpression();
+    };
+    
+    window.onCompInTableChange = () => {
+      const tIdx = document.getElementById('comp-in-table')?.value;
+      const targetTable = schema[tIdx];
+      if (!targetTable) return;
+      const colsHTML = targetTable.columns.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${c.type})</option>`).join('');
+      document.getElementById('comp-in-col').innerHTML = colsHTML;
+      updateGeneratedExpression();
+    };
+
+    let lastFocusedInputId = '';
+    document.addEventListener('focusin', (e) => {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') && e.target.id) {
+            lastFocusedInputId = e.target.id;
+        }
+    });
+    
+    window.insertColumnToActiveInput = (colBracketName) => {
+        const targetId = lastFocusedInputId || document.querySelector('#dynamic-inputs input, #dynamic-inputs textarea')?.id;
+        if (!targetId) return;
+        insertColumnToInput(targetId, colBracketName);
+    };
+
+    function renderDynamicForm() {
+      const selectCategoryEl = document.getElementById('select-category');
+      if (!selectCategoryEl) return;
+      
+      const category = selectCategoryEl.value;
+      dynamicInputs.innerHTML = '';
+
+      if (schema.length === 0) {
+        dynamicInputs.innerHTML = `<p class="text-xs text-amber-400">※ テーブル構造を1つ以上登録してください。</p>`;
+        updateGeneratedExpression();
+        return;
+      }
+
+      const tableOptions = schema.map((t, idx) => `<option value="${idx}">${escapeHtml(t.name)}</option>`).join('');
+
+      if (category === 'LOOKUP') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">取得したい参照先テーブル</label>
+              <select id="lookup-target-table" onchange="onLookupTableChange()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">${tableOptions}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">取得したい結果カラム</label>
+              <select id="lookup-result-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500"></select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">参照先テーブルの照合カラム</label>
+              <select id="lookup-match-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500"></select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">現在の検索キー項目</label>
+              <select id="lookup-key-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">${getAllColumnsFlatOptions()}</select>
+            </div>
+          </div>
+        `;
+        onLookupTableChange();
+      } 
+      else if (category === 'DEREF') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">Ref型の参照カラム（自テーブル）</label>
+              <select id="deref-ref-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">${getAllColumnsFlatOptions()}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">参照先テーブルで取得したい項目名</label>
+              <input type="text" id="deref-target-col" value="顧客名" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'REF_ROWS') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">関連子テーブル</label>
+              <select id="refrows-target-table" onchange="onRefRowsTableChange()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">${tableOptions}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">子テーブル側のRef型親キーカラム</label>
+              <select id="refrows-ref-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500"></select>
+            </div>
+          </div>
+        `;
+        onRefRowsTableChange();
+      }
+      else if (category === 'SELECT') {
+          dynamicInputs.innerHTML = `
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">対象テーブル</label>
+                      <select id="select-target-table" onchange="onSelectTableChange()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">${tableOptions}</select>
+                  </div>
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">抽出したい対象カラム</label>
+                      <select id="select-target-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500"></select>
+                  </div>
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">条件カラム</label>
+                      <select id="select-cond-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500"></select>
+                  </div>
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">比較値 / 現在行のカラム</label>
+                      <select id="select-thisrow-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">${getAllColumnsFlatOptions()}</select>
+                  </div>
+              </div>
+              <div class="mt-3 pt-3 border-t border-slate-800 flex items-center gap-2">
+                  <span class="text-[11px] text-slate-400 font-medium">列をクイック挿入:</span>
+                  <select id="common-col-selector" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-2.5 py-1.5 text-slate-200 text-xs focus:outline-none">${getAllColumnsFlatOptions()}</select>
+                  <button type="button" onclick="insertColumnToActiveInput(document.getElementById('common-col-selector').value)" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-xl transition shrink-0 cursor-pointer">挿入</button>
+              </div>
+          `;
+          onSelectTableChange();
+      }
+      else if (category === 'FILTER') {
+          dynamicInputs.innerHTML = `
+              <div class="space-y-3 text-xs">
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                          <label class="block text-slate-400 mb-1.5 font-medium">対象テーブル</label>
+                          <select id="filter-target-table" onchange="onFilterTableChange()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">${tableOptions}</select>
+                      </div>
+                      <div>
+                          <label class="block text-slate-400 mb-1.5 font-medium">テーブルの列を挿入</label>
+                          <div class="flex gap-1.5">
+                              <select id="filter-col-selector" class="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none"></select>
+                              <button type="button" onclick="insertColumnToFilter(document.getElementById('filter-col-selector').value)" class="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition shrink-0 cursor-pointer">挿入</button>
+                          </div>
+                      </div>
+                  </div>
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">絞り込み条件式</label>
+                      <input type="text" id="filter-cond-expr" value='[ステータス] = "進行中"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+                  </div>
+              </div>
+          `;
+          onFilterTableChange();
+      }
+      else if (category === 'LIST') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <label class="block text-slate-400 font-medium">リストに含める要素 (カンマ区切り)</label>
+            <input type="text" id="list-elements" value='"Apple", "Banana", "Orange"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'SPLIT') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">対象カラム / 文字列</label>
+              <select id="split-target-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none focus:border-blue-500">${getAllColumnsFlatOptions()}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">区切り文字 (Delimiter)</label>
+              <input type="text" id="split-delimiter" value="," oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'INTERSECT') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">リスト 1</label>
+              <input type="text" id="intersect-list1" value='LIST("A", "B", "C")' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">リスト 2</label>
+              <input type="text" id="intersect-list2" value='LIST("B", "C", "D")' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'UNIQUE') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <label class="block text-slate-400 font-medium">重複除去したい対象リスト (SELECT/LIST式)</label>
+            <input type="text" id="unique-target-list" value='SELECT(注文履歴[ID顧客], TRUE)' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'AGGREGATE') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">集計関数</label>
+              <select id="agg-func" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">
+                <option value="SUM">SUM（合計）</option>
+                <option value="COUNT">COUNT（件数）</option>
+                <option value="AVERAGE">AVERAGE（平均）</option>
+                <option value="MAX">MAX（最大値）</option>
+                <option value="MIN">MIN（最小値）</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">対象テーブル</label>
+              <select id="agg-target-table" onchange="onAggTableChange()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${tableOptions}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">集計数値カラム</label>
+              <select id="agg-target-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none"></select>
+            </div>
+            <div class="sm:col-span-1">
+              <label class="block text-slate-400 mb-1.5 font-medium">絞り込み条件カラム</label>
+              <select id="agg-cond-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none"></select>
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-slate-400 mb-1.5 font-medium">一致させる自行のカラム</label>
+              <select id="agg-thisrow-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            </div>
+          </div>
+        `;
+        onAggTableChange();
+      }
+      else if (category === 'STDEVP') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <label class="block text-slate-400 font-medium">標準偏差を求める数値リスト (SELECT式など)</label>
+            <input type="text" id="stdevp-target-list" value='SELECT(テスト結果[点数], TRUE)' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'IFS') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-3 text-xs">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-400 mb-1.5 font-medium">評価対象のカラム</label>
+                <select id="ifs-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+              </div>
+            </div>
+            <div class="border-t border-slate-800/80 pt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-400 mb-1.5 font-medium">条件 1</label>
+                <input type="text" id="ifs-cond-1" value='= "完了"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1.5 font-medium">結果 1</label>
+                <input type="text" id="ifs-res-1" value='"完了済"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1.5 font-medium">条件 2</label>
+                <input type="text" id="ifs-cond-2" value='= "処理中"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1.5 font-medium">結果 2</label>
+                <input type="text" id="ifs-res-2" value='"対応中"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+              </div>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">デフォルト結果 (TRUE)</label>
+              <input type="text" id="ifs-res-default" value='"未設定"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'SWITCH') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">判定対象の式/カラム</label>
+              <select id="switch-target-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-400 mb-1.5 font-medium">値 1</label>
+                <input type="text" id="switch-val-1" value='"A"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1.5 font-medium">結果 1</label>
+                <input type="text" id="switch-res-1" value='"優"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1.5 font-medium">値 2</label>
+                <input type="text" id="switch-val-2" value='"B"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1.5 font-medium">結果 2</label>
+                <input type="text" id="switch-res-2" value='"良"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+              </div>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">デフォルト値 (不一致時)</label>
+              <input type="text" id="switch-default" value='"可"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'IF') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">条件式</label>
+              <input type="text" id="if-cond" value="[金額] > 10000" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-400 mb-1.5 font-medium">真(True)の場合の値</label>
+                <input type="text" id="if-true-val" value='"高額"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1.5 font-medium">偽(False)の場合の値</label>
+                <input type="text" id="if-false-val" value='"通常"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+              </div>
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'AND_OR') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">結合タイプ</label>
+              <select id="andor-type" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">
+                <option value="AND">AND（すべての条件を満たす）</option>
+                <option value="OR">OR（いずれかの条件を満たす）</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-slate-400 mb-1.5 font-medium">条件 1</label>
+                <input type="text" id="andor-cond1" value='[ステータス] = "完了"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+              </div>
+              <div>
+                <label class="block text-slate-400 mb-1.5 font-medium">条件 2</label>
+                <input type="text" id="andor-cond2" value='[金額] >= 5000' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+              </div>
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'NOT') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <label class="block text-slate-400 font-medium">反転させたい条件式</label>
+            <input type="text" id="not-cond" value='[ステータス] = "非表示"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'EXISTS') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">対象テーブル</label>
+              <select id="exist-target-table" onchange="onExistTableChange()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${tableOptions}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">検証カラム</label>
+              <select id="exist-target-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none"></select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">比較する自カラム</label>
+              <select id="exist-thisrow-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">判定タイプ</label>
+              <select id="exist-mode" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">
+                <option value="NOT_EXISTS">存在しないことを確認 (Valid_If用)</option>
+                <option value="EXISTS">存在することを確認 (Yes/No用)</option>
+              </select>
+            </div>
+          </div>
+        `;
+        onExistTableChange();
+      }
+      else if (category === 'ISBLANK') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">対象カラム</label>
+              <select id="isblank-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">判定モード</label>
+              <select id="isblank-mode" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">
+                <option value="ISBLANK">ISBLANK（空の場合TRUE）</option>
+                <option value="ISNOTBLANK">ISNOTBLANK（入力済の場合TRUE）</option>
+              </select>
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'IN') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">検索する値/カラム</label>
+              <select id="in-val-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">検索対象のリスト</label>
+              <input type="text" id="in-target-list" value='LIST("管理者", "マネージャー")' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'CONTAINS') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">対象文字列/カラム</label>
+              <select id="contains-target-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">検索キーワード</label>
+              <input type="text" id="contains-keyword" value="AppSheet" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'CONCATENATE') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <label class="block text-slate-400 font-medium">結合する要素 (カンマ区切り)</label>
+            <input type="text" id="concat-args" value='[姓], " ", [名]' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'TEXT') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">対象数値/日付カラム</label>
+              <select id="text-target-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">フォーマット文字列</label>
+              <input type="text" id="text-format" value="yyyy/MM/dd" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'LEFT_RIGHT_MID') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">関数</label>
+              <select id="lrm-func" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">
+                <option value="LEFT">LEFT</option>
+                <option value="RIGHT">RIGHT</option>
+                <option value="MID">MID</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">対象カラム</label>
+              <select id="lrm-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">パラメータ</label>
+              <input type="text" id="lrm-params" value="3" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'SUBSTITUTE') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">対象カラム</label>
+              <select id="sub-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">検索文字列</label>
+              <input type="text" id="sub-old" value="-" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">置換後</label>
+              <input type="text" id="sub-new" value="" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'INDEX') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">対象リスト</label>
+              <input type="text" id="index-list" value='SPLIT([タグ], ",")' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">取得位置 (1始まり)</label>
+              <input type="number" id="index-pos" value="1" min="1" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'LOWER_UPPER') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">関数</label>
+              <select id="lu-func" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">
+                <option value="LOWER">LOWER</option>
+                <option value="UPPER">UPPER</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">対象カラム</label>
+              <select id="lu-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'TODAY_NOW') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <label class="block text-slate-400 font-medium">取得する関数</label>
+            <select id="todaynow-func" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">
+              <option value="TODAY">TODAY()</option>
+              <option value="NOW">NOW()</option>
+              <option value="TIMENOW">TIMENOW()</option>
+            </select>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'DATE_CONSTRUCT') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">年</label>
+              <input type="text" id="date-y" value="2026" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">月</label>
+              <input type="text" id="date-m" value="11" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">日</label>
+              <input type="text" id="date-d" value="1" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'WORKDAY') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">基準日</label>
+              <input type="text" id="workday-start" value="TODAY()" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">加算営業日数</label>
+              <input type="number" id="workday-days" value="5" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'EOMONTH') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">基準日</label>
+              <input type="text" id="eomonth-start" value="TODAY()" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">加減月数</label>
+              <input type="number" id="eomonth-months" value="0" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'USER_INFO') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <label class="block text-slate-400 font-medium">取得するユーザー情報</label>
+            <select id="user-info-func" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">
+              <option value="USEREMAIL">USEREMAIL()</option>
+              <option value="USERNAME">USERNAME()</option>
+              <option value="USERROLE">USERROLE()</option>
+            </select>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'CONTEXT') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <label class="block text-slate-400 font-medium">取得するコンテキスト情報</label>
+            <select id="context-option" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">
+              <option value='"View"'>CONTEXT("View")</option>
+              <option value='"ViewType"'>CONTEXT("ViewType")</option>
+              <option value='"AppName"'>CONTEXT("AppName")</option>
+              <option value='"Host"'>CONTEXT("Host")</option>
+            </select>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'ROUND') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">端数処理関数</label>
+              <select id="round-func" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">
+                <option value="ROUND">ROUND</option>
+                <option value="CEILING">CEILING</option>
+                <option value="FLOOR">FLOOR</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">対象数値/式</label>
+              <input type="text" id="round-num" value="[単価] * 1.1" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'ABS') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <label class="block text-slate-400 font-medium">対象数値/カラム</label>
+            <input type="text" id="abs-num" value="[差額]" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'RANDBETWEEN') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">最小値</label>
+              <input type="number" id="rand-min" value="1000" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">最大値</label>
+              <input type="number" id="rand-max" value="9999" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      } 
+      else if (category === 'COMPOSITE_IF_SUM') {
+          dynamicInputs.innerHTML = `
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">集計対象テーブル (子/関連)</label>
+                      <select id="comp-sum-table" onchange="onCompSumTableChange()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${tableOptions}</select>
+                  </div>
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">合計する金額/数値カラム</label>
+                      <select id="comp-sum-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none"></select>
+                  </div>
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">条件一致カラム (外部キー)</label>
+                      <select id="comp-sum-cond" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none"></select>
+                  </div>
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">判定のしきい値</label>
+                      <input type="number" id="comp-sum-threshold" value="100000" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+                  </div>
+              </div>
+          `;
+          onCompSumTableChange();
+      } 
+      else if (category === 'COMPOSITE_ISBLANK_FILTER') {
+          dynamicInputs.innerHTML = `
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">チェック対象テーブル</label>
+                      <select id="comp-dup-table" onchange="onCompDupTableChange()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${tableOptions}</select>
+                  </div>
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">重複チェックするカラム</label>
+                      <select id="comp-dup-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none"></select>
+                  </div>
+              </div>
+          `;
+          onCompDupTableChange();
+      } 
+      else if (category === 'COMPOSITE_INDEX_SPLIT') {
+          dynamicInputs.innerHTML = `
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">対象の文字列カラム</label>
+                      <select id="comp-split-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+                  </div>
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">取得するインデックス位置</label>
+                      <input type="number" id="comp-split-pos" value="1" min="1" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+                  </div>
+              </div>
+          `;
+          updateGeneratedExpression();
+      } 
+      else if (category === 'COMPOSITE_IN_SELECT') {
+          dynamicInputs.innerHTML = `
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">判定する値</label>
+                      <input type="text" id="comp-in-val" value="USEREMAIL()" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+                  </div>
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">対象リストテーブル</label>
+                      <select id="comp-in-table" onchange="onCompInTableChange()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${tableOptions}</select>
+                  </div>
+                  <div>
+                      <label class="block text-slate-400 mb-1.5 font-medium">抽出するカラム</label>
+                      <select id="comp-in-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none"></select>
+                  </div>
+              </div>
+          `;
+          onCompInTableChange();
+      }
+    }
+
+    window.onRefRowsTableChange = () => {
+      const tIdx = document.getElementById('refrows-target-table').value;
+      const targetTable = schema[tIdx];
+      if (!targetTable) return;
+
+      const colsHTML = targetTable.columns.map(c => `<option value="${escapeHtml(c.name)}">${escapeHtml(c.name)} (${c.type})</option>`).join('');
+      document.getElementById('refrows-ref-col').innerHTML = colsHTML;
+
+      updateGeneratedExpression();
+    };
+
+    function updateGeneratedExpression() {
+      if (schema.length === 0) {
+        codeOutput.textContent = '-- テーブルが登録されていません --';
+        textExplanation.textContent = 'テーブル構造を追加すると式が自動生成されます。';
+        textAdvice.textContent = '-';
+        return;
+      }
+
+      const selectCategoryEl = document.getElementById('select-category');
+      if (!selectCategoryEl) return;
+
+      const category = selectCategoryEl.value;
+      const useThisRow = toggleThisRow ? toggleThisRow.checked : true;
+      const thisRowPrefix = useThisRow ? '[_THISROW].' : '';
+
+      let expression = '';
+      let explanation = '';
+      let advice = '';
+
+      if (category === 'LOOKUP') {
+        const tIdx = document.getElementById('lookup-target-table')?.value;
+        const targetTable = schema[tIdx];
+        const resCol = document.getElementById('lookup-result-col')?.value || 'Column';
+        const matchCol = document.getElementById('lookup-match-col')?.value || 'ID';
+        const keyCol = document.getElementById('lookup-key-col')?.value || 'KeyID';
+
+        if (targetTable) {
+          expression = `LOOKUP(${thisRowPrefix}[${keyCol}], "${targetTable.name}", "${matchCol}", "${resCol}")`;
+          explanation = `「${targetTable.name}」テーブルを検索し、${matchCol} が現在行の [${keyCol}] と一致するレコードの [${resCol}] の値を取り出します。`;
+          advice = `LOOKUP関数は非常に便利ですが、大きなテーブルでは処理が重くなる場合があります。Ref型の列を設定している場合は [Ref列名].[${resCol}]（De-reference構造）を使用する方がより高速です。`;
+        }
+      } 
+      else if (category === 'DEREF') {
+        const refCol = document.getElementById('deref-ref-col')?.value || 'RefColumn';
+        const targetCol = document.getElementById('deref-target-col')?.value || 'Column';
+        expression = `[${refCol}].[${targetCol}]`;
+        explanation = `Ref型カラム [${refCol}] が参照している先のリレーションテーブルから、指定した [${targetCol}] の値を直接取得（デリファレンス）します。`;
+        advice = `LOOKUPよりも処理性能が格段に高く、AppSheetでの最も推奨される参照テクニックです。`;
+      }
+      else if (category === 'REF_ROWS') {
+        const tIdx = document.getElementById('refrows-target-table')?.value;
+        const targetTable = schema[tIdx];
+        const refCol = document.getElementById('refrows-ref-col')?.value || 'RefColumn';
+        if (targetTable) {
+          expression = `REF_ROWS("${targetTable.name}", "${refCol}")`;
+          explanation = `「${targetTable.name}」テーブル内で、[${refCol}] が現在行のキーと一致する子レコードのリスト（Related List）を自動取得します。`;
+          advice = `親テーブルに作成される Related ... Virtual Column で自動生成される標準的な式です。`;
+        }
+      }
+      else if (category === 'SELECT') {
+        const tIdx = document.getElementById('select-target-table')?.value;
+        const targetTable = schema[tIdx];
+        const targetCol = document.getElementById('select-target-col')?.value || 'Column';
+        const condCol = document.getElementById('select-cond-col')?.value || 'Status';
+        const thisRowCol = document.getElementById('select-thisrow-col')?.value || 'ID';
+
+        if (targetTable) {
+          expression = `SELECT(${targetTable.name}[${targetCol}], [${condCol}] = ${thisRowPrefix}[${thisRowCol}])`;
+          explanation = `「${targetTable.name}」テーブルから、[${condCol}] が現在行の [${thisRowCol}] と一致する全レコードの [${targetCol}] をリストとして取得します。`;
+          advice = `戻り値は List（配列）型です。Virtual Columnの参照リストやEnumListの選択肢候補（Valid_If / Suggested Values）に有効です。`;
+        }
+      }
+      else if (category === 'FILTER') {
+        const tIdx = document.getElementById('filter-target-table')?.value;
+        const targetTable = schema[tIdx];
+        const condExpr = document.getElementById('filter-cond-expr')?.value || 'TRUE';
+        if (targetTable) {
+          expression = `FILTER("${targetTable.name}", ${condExpr})`;
+          explanation = `「${targetTable.name}」テーブルから条件（${condExpr}）に合致する行の「キー列」のリストを取得します。`;
+          advice = `SELECT(Table[Key], 条件) と同等の動きをしますが、キー列のリストを取得することが明示されるためコードがシンプルになります。`;
+        }
+      }
+      else if (category === 'LIST') {
+        const elems = document.getElementById('list-elements')?.value || '';
+        expression = `LIST(${elems})`;
+        explanation = `指定した複数の要素（${elems}）をまとめた新しい List（配列）を生成します。`;
+        advice = `EnumListのカラム初期値や、IN()関数の検索対象リストの生成などに役立ちます。`;
+      }
+      else if (category === 'SPLIT') {
+        const targetCol = document.getElementById('split-target-col')?.value || 'TextCol';
+        const delim = document.getElementById('split-delimiter')?.value || ',';
+        expression = `SPLIT([${targetCol}], "${delim}")`;
+        explanation = `[${targetCol}] の文字列を区切り文字 "${delim}" で分割し、要素の List（配列）に変換します。`;
+        advice = `CSV文字列やカンマ区切りテキストを個別要素として分解して処理する際に重宝します。`;
+      }
+      else if (category === 'INTERSECT') {
+        const l1 = document.getElementById('intersect-list1')?.value || 'LIST()';
+        const l2 = document.getElementById('intersect-list2')?.value || 'LIST()';
+        expression = `INTERSECT(${l1}, ${l2})`;
+        explanation = `2つのリスト（${l1}）と（${l2}）の両方に共通して存在する要素のみを抽出した新しいリストを返します。`;
+        advice = `ユーザーの保持する権限リストと、必要権限リストの重複チェックなどに活用されます。`;
+      }
+      else if (category === 'UNIQUE') {
+        const listExpr = document.getElementById('unique-target-list')?.value || 'LIST()';
+        expression = `UNIQUE(${listExpr})`;
+        explanation = `リスト（${listExpr}）の中から重複する要素を除外した一意なリストを生成します。`;
+        advice = `重複のない選択肢リストをフォームに提示したい場合に便利です。`;
+      }
+      else if (category === 'AGGREGATE') {
+        const func = document.getElementById('agg-func')?.value || 'SUM';
+        const tIdx = document.getElementById('agg-target-table')?.value;
+        const targetTable = schema[tIdx];
+        const targetCol = document.getElementById('agg-target-col')?.value || 'Amount';
+        const condCol = document.getElementById('agg-cond-col')?.value || 'ID';
+        const thisRowCol = document.getElementById('agg-thisrow-col')?.value || 'ID';
+
+        if (targetTable) {
+          expression = `${func}(SELECT(${targetTable.name}[${targetCol}], [${condCol}] = ${thisRowPrefix}[${thisRowCol}]))`;
+          explanation = `「${targetTable.name}」から [${condCol}] が一致する行を抽出し、その [${targetCol}] の${getFuncJPName(func)}を算出します。`;
+          advice = `合計や件数を求める定型パターンです。親テーブル側の Virtual Column に設定することで集計値を自動保持できます。`;
+        }
+      }
+      else if (category === 'STDEVP') {
+        const listExpr = document.getElementById('stdevp-target-list')?.value || 'LIST()';
+        expression = `STDEVP(${listExpr})`;
+        explanation = `数値リスト（${listExpr}）の母標準偏差（Standard Deviation）を計算します。`;
+        advice = `データのばらつきや偏差値計算を行いたい高度な集計で利用します。`;
+      }
+      else if (category === 'IFS') {
+        const col = document.getElementById('ifs-col')?.value || 'Status';
+        const cond1 = document.getElementById('ifs-cond-1')?.value || '= "完了"';
+        const res1 = document.getElementById('ifs-res-1')?.value || '"Done"';
+        const cond2 = document.getElementById('ifs-cond-2')?.value || '= "処理中"';
+        const res2 = document.getElementById('ifs-res-2')?.value || '"Progress"';
+        const resDef = document.getElementById('ifs-res-default')?.value || '"N/A"';
+
+        expression = `IFS(\n  [${col}] ${cond1}, ${res1},\n  [${col}] ${cond2}, ${res2},\n  TRUE, ${resDef}\n)`;
+        explanation = `[${col}] の値に応じて複数の条件を上から順に評価し、最初に合致した結果を返します。条件がどれにも当てはまらない場合は TRUE（デフォルト値）が返されます。`;
+        advice = `AppSheetでは SWITCH() よりも IFS() の方がより柔軟な条件式（数値比較や範囲指定）を書くことができ推奨されます。`;
+      }
+      else if (category === 'SWITCH') {
+        const targetCol = document.getElementById('switch-target-col')?.value || 'Status';
+        const val1 = document.getElementById('switch-val-1')?.value || '"A"';
+        const res1 = document.getElementById('switch-res-1')?.value || '"優"';
+        const val2 = document.getElementById('switch-val-2')?.value || '"B"';
+        const res2 = document.getElementById('switch-res-2')?.value || '"良"';
+        const def = document.getElementById('switch-default')?.value || '"可"';
+
+        expression = `SWITCH([${targetCol}],\n  ${val1}, ${res1},\n  ${val2}, ${res2},\n  ${def}\n)`;
+        explanation = `[${targetCol}] の値が ${val1} なら ${res1}、${val2} なら ${res2}、いずれでもない場合は ${def} を返します。`;
+        advice = `特定の1つのカラムの値と完全一致する条件で分岐させたい場合に可読性が高くなります。`;
+      }
+      else if (category === 'IF') {
+        const cond = document.getElementById('if-cond')?.value || 'TRUE';
+        const tVal = document.getElementById('if-true-val')?.value || 'TRUE';
+        const fVal = document.getElementById('if-false-val')?.value || 'FALSE';
+        expression = `IF(${cond}, ${tVal}, ${fVal})`;
+        explanation = `条件式（${cond}）が真の場合は ${tVal}、偽の場合は ${fVal} を返します。`;
+        advice = `2段階のシンプルな条件分岐に使用します。`;
+      }
+      else if (category === 'AND_OR') {
+        const type = document.getElementById('andor-type')?.value || 'AND';
+        const c1 = document.getElementById('andor-cond1')?.value || 'TRUE';
+        const c2 = document.getElementById('andor-cond2')?.value || 'TRUE';
+        expression = `${type}(${c1}, ${c2})`;
+        explanation = `${type === 'AND' ? 'すべての条件（' + c1 + ' かつ ' + c2 + '）が満たされているか判定します。' : 'いずれかの条件（' + c1 + ' または ' + c2 + '）が満たされているか判定します。'}`;
+        advice = `引数はカンマ区切りで3つ以上指定することも可能です。`;
+      }
+      else if (category === 'NOT') {
+        const cond = document.getElementById('not-cond')?.value || 'TRUE';
+        expression = `NOT(${cond})`;
+        explanation = `条件式（${cond}）の真偽結果を反転（TRUE→FALSE / FALSE→TRUE）させます。`;
+        advice = `ISNOTBLANK([Col]) のように専用関数がある場合はそちらを使うとより見やすくなります。`;
+      }
+      else if (category === 'EXISTS') {
+        const tIdx = document.getElementById('exist-target-table')?.value;
+        const targetTable = schema[tIdx];
+        const targetCol = document.getElementById('exist-target-col')?.value || 'Email';
+        const thisRowCol = document.getElementById('exist-thisrow-col')?.value || 'Email';
+        const mode = document.getElementById('exist-mode')?.value;
+
+        if (targetTable) {
+          if (mode === 'NOT_EXISTS') {
+            expression = `ISBLANK(FILTER("${targetTable.name}", [${targetCol}] = ${thisRowPrefix}[${thisRowCol}]))`;
+            explanation = `「${targetTable.name}」テーブル内に、入力された [${thisRowCol}] と同じ値がまだ存在しない（空である）かチェックします。`;
+            advice = `[Valid_If] プロパティに設定するのに最適です。重複登録を防止し、エラーメッセージを表示させることができます。`;
+          } else {
+            expression = `COUNT(FILTER("${targetTable.name}", [${targetCol}] = ${thisRowPrefix}[${thisRowCol}])) > 0`;
+            explanation = `「${targetTable.name}」テーブル内に、一致するレコードが1件以上存在するか（TRUE/FALSE）を判定します。`;
+            advice = `[Show_If] や [Editable_If] などの表示・編集制御ロジックに利用できます。`;
+          }
+        }
+      }
+      else if (category === 'ISBLANK') {
+        const col = document.getElementById('isblank-col')?.value || 'Column';
+        const mode = document.getElementById('isblank-mode')?.value || 'ISBLANK';
+        expression = `${mode}([${col}])`;
+        explanation = `[${col}] が${mode === 'ISBLANK' ? '未入力・空であるか' : '入力済み・値が存在するか'}をチェックします。`;
+        advice = `条件分岐や必須チェックのロジックで最も頻繁に使用される安全な関数です。`;
+      }
+      else if (category === 'IN') {
+        const valCol = document.getElementById('in-val-col')?.value || 'Col';
+        const targetList = document.getElementById('in-target-list')?.value || 'LIST()';
+        expression = `IN([${valCol}], ${targetList})`;
+        explanation = `[${valCol}] の値が指定したリスト（${targetList}）の中に含まれているかどうか（TRUE/FALSE）を判定します。`;
+        advice = `ユーザーの役割判定や、特定カテゴリに属するかのチェックに便利です。`;
+      }
+      else if (category === 'CONTAINS') {
+        const col = document.getElementById('contains-target-col')?.value || 'Col';
+        const kw = document.getElementById('contains-keyword')?.value || '';
+        expression = `CONTAINS([${col}], "${kw}")`;
+        explanation = `[${col}] の文字列の中に "${kw}" が含まれているかを部分一致判定します。`;
+        advice = `大文字・小文字は区別されません。あいまい検索などに役立ちます。`;
+      }
+      else if (category === 'CONCATENATE') {
+        const args = document.getElementById('concat-args')?.value || '';
+        expression = `CONCATENATE(${args})`;
+        explanation = `指定した複数のテキスト要素（${args}）を1つの文字列に結合します。`;
+        advice = `"文字列1" & "文字列2" のように & 演算子を使うことでも同様の結合が可能です。`;
+      }
+      else if (category === 'TEXT') {
+        const col = document.getElementById('text-target-col')?.value || 'Col';
+        const fmt = document.getElementById('text-format')?.value || '';
+        expression = fmt ? `TEXT([${col}], "${fmt}")` : `TEXT([${col}])`;
+        explanation = `[${col}] の値（日付や数値）を指定したフォーマット（${fmt || '標準'}）の文字列に変換します。`;
+        advice = `日付を "yyyy年MM月dd日" の表記に整形して通知文面に差し込む際などに使用します。`;
+      }
+      else if (category === 'LEFT_RIGHT_MID') {
+        const func = document.getElementById('lrm-func')?.value || 'LEFT';
+        const col = document.getElementById('lrm-col')?.value || 'Col';
+        const params = document.getElementById('lrm-params')?.value || '1';
+        expression = `${func}([${col}], ${params})`;
+        explanation = `[${col}] の文字列から ${func} のルールに従い部分文字列を抽出します。`;
+        advice = `コード番号の頭文字からカテゴリを判別する場合などに有効です。`;
+      }
+      else if (category === 'SUBSTITUTE') {
+        const col = document.getElementById('sub-col')?.value || 'Col';
+        const oldStr = document.getElementById('sub-old')?.value || '';
+        const newStr = document.getElementById('sub-new')?.value || '';
+        expression = `SUBSTITUTE([${col}], "${oldStr}", "${newStr}")`;
+        explanation = `[${col}] に含まれる "${oldStr}" を "${newStr}" に置換します。`;
+        advice = `ハイフンやスペースの除去整形処理に適しています。`;
+      }
+      else if (category === 'INDEX') {
+        const listExpr = document.getElementById('index-list')?.value || 'LIST()';
+        const pos = document.getElementById('index-pos')?.value || '1';
+        expression = `INDEX(${listExpr}, ${pos})`;
+        explanation = `リスト（${listExpr}）の中の ${pos} 番目の要素を取り出します。`;
+        advice = `AppSheetのリストインデックスは 1 から始まります（0ではありません）。`;
+      }
+      else if (category === 'LOWER_UPPER') {
+        const func = document.getElementById('lu-func')?.value || 'LOWER';
+        const col = document.getElementById('lu-col')?.value || 'Col';
+        expression = `${func}([${col}])`;
+        explanation = `[${col}] の英字テキストを${func === 'LOWER' ? '小文字' : '大文字'}に統一変換します。`;
+        advice = `メールアドレスやコードの一致判定前の正規化で有効です。`;
+      }
+      else if (category === 'TODAY_NOW') {
+        const func = document.getElementById('todaynow-func')?.value || 'TODAY';
+        expression = `${func}()`;
+        explanation = `呼び出された時点の現在の${func === 'TODAY' ? '日付' : (func === 'NOW' ? '日時' : '時刻')}を取得します。`;
+        advice = `初期値（Initial Value）に指定することで、登録日時の自動記録が可能です。`;
+      }
+      else if (category === 'DATE_CONSTRUCT') {
+        const y = document.getElementById('date-y')?.value || '2026';
+        const m = document.getElementById('date-m')?.value || '11';
+        const d = document.getElementById('date-d')?.value || '1';
+        expression = `DATE("${y}-${m}-${d}")`;
+        explanation = `指定された年・月・日（${y}/${m}/${d}）からDateオブジェクトを生成します。`;
+        advice = `文字列から日付型へ安全にキャストしたい場合に役立ちます。`;
+      }
+      else if (category === 'WORKDAY') {
+        const start = document.getElementById('workday-start')?.value || 'TODAY()';
+        const days = document.getElementById('workday-days')?.value || '5';
+        expression = `WORKDAY(${start}, ${days})`;
+        explanation = `基準日（${start}）から土日を除いた ${days} 営業日後の日付を返します。`;
+        advice = `納期計算やリマインダー日の自動算出に非常に強力です。`;
+      }
+      else if (category === 'EOMONTH') {
+        const start = document.getElementById('eomonth-start')?.value || 'TODAY()';
+        const months = document.getElementById('eomonth-months')?.value || '0';
+        expression = `EOMONTH(${start}, ${months})`;
+        explanation = `基準日（${start}）の ${months} ヶ月後の月末日を取得します。`;
+        advice = `月末締めの売上集計期間の自動計算などで定番の関数です。`;
+      }
+      else if (category === 'USER_INFO') {
+        const func = document.getElementById('user-info-func')?.value || 'USEREMAIL';
+        expression = `${func}()`;
+        explanation = `現在ログインしているユーザーの${func === 'USEREMAIL' ? 'メールアドレス' : (func === 'USERNAME' ? 'ユーザー名' : 'ロール権限')}を返します。`;
+        advice = `担当者ごとのデータセキュリティフィルタ（Security Filter）や初期値設定で必須の関数です。`;
+      }
+      else if (category === 'CONTEXT') {
+        const opt = document.getElementById('context-option')?.value || '"View"';
+        expression = `CONTEXT(${opt})`;
+        explanation = `アプリの現在の実行環境情報（${opt}）を取得します。`;
+        advice = `特定の画面（Formビューなど）だけでアクションボタンを表示させたい場合の [Show_If] 条件に重宝します。`;
+      }
+      else if (category === 'ROUND') {
+        const func = document.getElementById('round-func')?.value || 'ROUND';
+        const num = document.getElementById('round-num')?.value || '0';
+        expression = `${func}(${num})`;
+        explanation = `数値（${num}）に対して ${func}（${func === 'ROUND' ? '四捨五入' : (func === 'CEILING' ? '切り上げ' : '切り捨て')}）を行います。`;
+        advice = `消費税計算や平均値の端数調整で利用します。`;
+      }
+      else if (category === 'ABS') {
+        const num = document.getElementById('abs-num')?.value || '0';
+        expression = `ABS(${num})`;
+        explanation = `数値（${num}）の絶対値を求めます。負の数であっても正の数として返されます。`;
+        advice = `予実の差額や変動幅の大きさを判定する際に有効です。`;
+      }
+      else if (category === 'RANDBETWEEN') {
+        const min = document.getElementById('rand-min')?.value || '1';
+        const max = document.getElementById('rand-max')?.value || '100';
+        expression = `RANDBETWEEN(${min}, ${max})`;
+        explanation = `${min} から ${max} の範囲でランダムな整数を生成します。`;
+        advice = `仮IDの生成やテストデータのランダム割り当てなどで活用できます。`;
+      } 
+      else if (category === 'COMPOSITE_IF_SUM') {
+        const tIdx = document.getElementById('comp-sum-table')?.value;
+        const targetTable = schema[tIdx];
+        const sumCol = document.getElementById('comp-sum-col')?.value || '金額';
+        const condCol = document.getElementById('comp-sum-cond')?.value || 'ID顧客';
+        const threshold = document.getElementById('comp-sum-threshold')?.value || '100000';
+        if (targetTable) {
+            expression = `IF(SUM(SELECT(${targetTable.name}[${sumCol}], [${condCol}] = ${thisRowPrefix}[ID顧客])) >= ${threshold}, "VIP", "一般")`;
+            explanation = `「${targetTable.name}」テーブルから現在行の顧客に紐づく [${sumCol}] の合計を算出し、${threshold}円以上であれば「VIP」、それ以外は「一般」と判定します。`;
+            advice = `親テーブルのVirtual Column（仮想列）に設定することで、顧客ごとのランク分けやステータス自動制御に活用できます。`;
+        }
+      } 
+      else if (category === 'COMPOSITE_ISBLANK_FILTER') {
+        const tIdx = document.getElementById('comp-dup-table')?.value;
+        const targetTable = schema[tIdx];
+        const dupCol = document.getElementById('comp-dup-col')?.value || 'メールアドレス';
+        if (targetTable) {
+            expression = `ISBLANK(FILTER("${targetTable.name}", AND([${dupCol}] = ${thisRowPrefix}[${dupCol}], [ID] <> ${thisRowPrefix}[ID])))`;
+            explanation = `編集中の [${dupCol}] が、自分自身を除く他のレコードにすでに存在するかをチェックし、存在しない（空である）場合にTRUE（入力許可）を返します。`;
+            advice = `Valid_If（入力規則）に設定することで、フォームへの重複データの登録をリアルタイムにブロックできます。`;
+        }
+      } 
+      else if (category === 'COMPOSITE_INDEX_SPLIT') {
+        const splitCol = document.getElementById('comp-split-col')?.value || 'タグ';
+        const pos = document.getElementById('comp-split-pos')?.value || '1';
+        expression = `INDEX(SPLIT([${splitCol}], ","), ${pos})`;
+        explanation = `カンマ区切りの文字列カラム [${splitCol}] をリストに分解し、指定された ${pos} 番目の要素をピンポイントで取得します。`;
+        advice = `EnumListや複数選択されたタグから最初の値だけを取り出して別の処理に渡したい場合に非常に便利です。`;
+      } 
+      else if (category === 'COMPOSITE_IN_SELECT') {
+        const valExpr = document.getElementById('comp-in-val')?.value || 'USEREMAIL()';
+        const tIdx = document.getElementById('comp-in-table')?.value;
+        const targetTable = schema[tIdx];
+        const inCol = document.getElementById('comp-in-col')?.value || 'メールアドレス';
+        if (targetTable) {
+            expression = `IN(${valExpr}, SELECT(${targetTable.name}[${inCol}], TRUE))`;
+            explanation = `${valExpr} の値が、「${targetTable.name}」の [${inCol}] カラムのリスト内に含まれているかを判定します。`;
+            advice = `Security Filter（セキュリティフィルター）や、特定の権限を持つユーザーのみにボタンを表示・非表示にする場合の条件式として最適です。`;
+        }
+      }
+
+      codeOutput.textContent = expression;
+      textExplanation.textContent = explanation;
+      textAdvice.textContent = advice;
+      
+      const FUNCTION_HELP_URLS = {
+          // 1. 個別ヘルプが存在する主要関数
+          'LOOKUP': 'https://support.google.com/appsheet/answer/10107410?hl=ja',
+          'SELECT': 'https://support.google.com/appsheet/answer/10108207?hl=ja',
+          'FILTER': 'https://support.google.com/appsheet/answer/10108196?hl=ja',
+          'REF_ROWS': 'https://support.google.com/appsheet/answer/10107364?hl=ja',
+          'IFS': 'https://support.google.com/appsheet/answer/10107912?hl=ja',
+          'IF': 'https://support.google.com/appsheet/answer/10107912?hl=ja',
+          'SWITCH': 'https://support.google.com/appsheet/answer/10107912?hl=ja',
+          'TODAY_NOW': 'https://support.google.com/appsheet/answer/10107316?hl=ja',
+          'USER_INFO': 'https://support.google.com/appsheet/answer/10107319?hl=ja',
+      
+          // 2. 個別URLがない、または一覧ページへ共通化する関数（空欄またはデフォルト一覧へ誘導）
+          'DEREF': 'https://support.google.com/appsheet/table/10104782?hl=ja',
+          'LIST': 'https://support.google.com/appsheet/table/10104782?hl=ja',
+          'SPLIT': '',
+          'INTERSECT': '',
+          'UNIQUE': '',
+          'AGGREGATE': 'https://support.google.com/appsheet/table/10104782?hl=ja',
+          'STDEVP': '',
+          'AND_OR': '',
+          'NOT': '',
+          'EXISTS': '',
+          'ISBLANK': '',
+          'IN': '',
+          'CONTAINS': '',
+          'CONCATENATE': '',
+          'TEXT': '',
+          'LEFT_RIGHT_MID': '',
+          'SUBSTITUTE': '',
+          'INDEX': '',
+          'LOWER_UPPER': '',
+          'DATE_CONSTRUCT': '',
+          'WORKDAY': '',
+          'EOMONTH': '',
+          'CONTEXT': '',
+          'ROUND': '',
+          'ABS': '',
+          'RANDBETWEEN': '',
+          'COMPOSITE_IF_SUM': '',
+          'COMPOSITE_ISBLANK_FILTER': '',
+          'COMPOSITE_INDEX_SPLIT': '',
+          'COMPOSITE_IN_SELECT': '',
+      
+          // 3. デフォルト（上記以外ですべての関数を網羅している公式一覧ページ）
+          'DEFAULT': 'https://support.google.com/appsheet/table/10104782?hl=ja'
+      };
+
+      const helpLinkEl = document.getElementById('link-official-help');
+      if (helpLinkEl) {
+          const categoryVal = document.getElementById('select-category')?.value;
+          const targetUrl = FUNCTION_HELP_URLS[categoryVal] !== undefined ? FUNCTION_HELP_URLS[categoryVal] : FUNCTION_HELP_URLS['DEFAULT'];
+          
+          if (targetUrl) {
+              helpLinkEl.href = targetUrl;
+              helpLinkEl.parentElement.style.display = ''; 
+          } else {
+              helpLinkEl.href = '#';
+              helpLinkEl.parentElement.style.display = 'none'; 
+          }
+      }
+    }
+
+    function getFuncJPName(func) {
+      switch(func) {
+        case 'SUM': return '合計値';
+        case 'COUNT': return '件数';
+        case 'AVERAGE': return '平均値';
+        case 'MAX': return '最大値';
+        case 'MIN': return '最小値';
+        default: return '計算結果';
+      }
+    }
+
+    function copyToClipboard() {
+      const code = codeOutput.textContent;
+      if (!code || code.startsWith('--')) return;
+
+      const textarea = document.createElement('textarea');
+      textarea.value = code;
+      document.body.appendChild(textarea);
+      textarea.select();
+      
+      try {
+        document.execCommand('copy');
+        showToast('AppSheet式をコピーしました！');
+      } catch (err) {
+        showToast('コピーに失敗しました');
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = document.getElementById('toast-message');
+      toastMsg.textContent = msg;
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    
+    window.openHelpModal = () => {
+        const modal = document.getElementById('help-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            if (typeof lucide !== 'undefined') lucide.createIcons();
+        }
+    };
+    
+    window.closeHelpModal = () => {
+        const modal = document.getElementById('help-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+    };
+    
+    document.addEventListener('click', (e) => {
+        const modal = document.getElementById('help-modal');
+        if (e.target === modal) {
+            closeHelpModal();
+        }
+    });
+
+    window.switchHelpTab = (tabName) => {
+        const btnSteps = document.getElementById('tab-btn-steps');
+        const btnUi = document.getElementById('tab-btn-ui');
+        const contentSteps = document.getElementById('help-content-steps');
+        const contentUi = document.getElementById('help-content-ui');
+    
+        if (tabName === 'steps') {
+            btnSteps.className = 'px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5';
+            btnUi.className = 'px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5';
+            contentSteps.classList.remove('hidden');
+            contentUi.classList.add('hidden');
+        } else {
+            btnUi.className = 'px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5';
+            btnSteps.className = 'px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5';
+            contentUi.classList.remove('hidden');
+            contentSteps.classList.add('hidden');
+        }
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+    };
+  </script>
+  
+  <!-- 使い方モーダルウィンドウ -->
+  <div id="help-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col m-4 text-slate-200">
+          
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-800 shrink-0">
+              <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                  <i data-lucide="book-open" class="text-blue-400 w-4 h-4"></i>
+                  AppSheet Expression Builder の使い方
+              </h3>
+              <button type="button" onclick="closeHelpModal()" class="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer">
+                  <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+          </div>
+  
+          <div class="flex px-6 pt-3 border-b border-slate-800 gap-2 shrink-0 bg-slate-950/40">
+              <button type="button" onclick="switchHelpTab('steps')" id="tab-btn-steps" class="px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5">
+                  <i data-lucide="list-ordered" class="w-3.5 h-3.5"></i> 基本の使い方
+              </button>
+              <button type="button" onclick="switchHelpTab('ui')" id="tab-btn-ui" class="px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5">
+                  <i data-lucide="layout" class="w-3.5 h-3.5"></i> UI/UX・便利機能
+              </button>
+          </div>
+          
+          <div class="p-6 overflow-y-auto space-y-4 text-xs text-slate-300 flex-1">
+              
+              <!-- タブ1: 基本の使い方 -->
+              <div id="help-content-steps" class="space-y-3">
+                  <div class="flex gap-3 items-start bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/80">
+                      <div class="w-6 h-6 rounded-lg bg-blue-600/20 text-blue-400 font-bold flex items-center justify-center shrink-0">1</div>
+                      <div>
+                          <h4 class="font-semibold text-slate-200 mb-1">スキーマ（テーブル構造）の準備</h4>
+                          <p class="text-slate-400 leading-relaxed">「顧客マスタ」「売上履歴」「商品マスタ」などのワンタッププリセットを追加するか、CSV・スプレッドシートの行データを貼り付けてアプリのテーブル構造を定義します。</p>
+                      </div>
+                  </div>
+  
+                  <div class="flex gap-3 items-start bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/80">
+                      <div class="w-6 h-6 rounded-lg bg-blue-600/20 text-blue-400 font-bold flex items-center justify-center shrink-0">2</div>
+                      <div>
+                          <h4 class="font-semibold text-slate-200 mb-1">生成したい処理（関数）の選択</h4>
+                          <p class="text-slate-400 leading-relaxed">検索機能やカテゴリから目的の関数（SELECT、LOOKUP、IFS、高度な合成関数など）を選択し、対象となるテーブルやカラムを指定します。</p>
+                      </div>
+                  </div>
+  
+                  <div class="flex gap-3 items-start bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/80">
+                      <div class="w-6 h-6 rounded-lg bg-blue-600/20 text-blue-400 font-bold flex items-center justify-center shrink-0">3</div>
+                      <div>
+                          <h4 class="font-semibold text-slate-200 mb-1">式をコピーして AppSheet へ適用</h4>
+                          <p class="text-slate-400 leading-relaxed">リアルタイムに自動生成された AppSheet 式を確認し、「クリップボードにコピー」ボタンを押して AppSheet エディタに貼り付けて活用します。</p>
+                      </div>
+                  </div>
+              </div>
+  
+              <!-- タブ2: UI/UX・便利機能 -->
+              <div id="help-content-ui" class="space-y-3 hidden">
+                  <div class="flex gap-3 items-start bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/80">
+                      <div class="w-6 h-6 rounded-lg bg-blue-600/20 text-blue-400 font-bold flex items-center justify-center shrink-0">
+                          <i data-lucide="layout-template" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <div>
+                          <h4 class="font-semibold text-slate-200 mb-1">2ペイン構成のスマートレイアウト</h4>
+                          <p class="text-slate-400 leading-relaxed">画面は「左：スキーマ」「右：生成・出力」の2カラム構成です。左側でテーブルを定義すると、右側の関数設定や列挿入プルダウンへリアルタイムに連動します。</p>
+                      </div>
+                  </div>
+  
+                  <div class="flex gap-3 items-start bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/80">
+                      <div class="w-6 h-6 rounded-lg bg-blue-600/20 text-blue-400 font-bold flex items-center justify-center shrink-0">
+                          <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <div>
+                          <h4 class="font-semibold text-slate-200 mb-1">関数検索・フィルタ機能</h4>
+                          <p class="text-slate-400 leading-relaxed">「関数の検索・フィルタ」入力欄にキーワード（例: CONCATENATE, DATEなど）を入力すると、対応する生成パターンを瞬時に絞り込むことができます。</p>
+                      </div>
+                  </div>
+              </div>
+  
+          </div>
+  
+          <div class="px-6 py-4 border-t border-slate-800 flex justify-end shrink-0 bg-slate-900">
+              <button type="button" onclick="closeHelpModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-xl transition cursor-pointer">
+                  閉じる
+              </button>
+          </div>
+      </div>
+  </div>
+</body>
+</html>
