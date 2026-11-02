@@ -250,6 +250,8 @@
                 <option value="CONTEXT">CONTEXT("View") / CONTEXT("AppName")（画面情報）</option>
                 <option value="HERE">HERE（現在地のGPS座標取得）</option>
                 <option value="LATLONG">LATLONG（緯度経度からLatLong値の構築）</option>
+                <option value="LAT">LAT（LatLong値から緯度を抽出）</option>
+                <option value="LONG">LONG（LatLong値から経度を抽出）</option>
               </optgroup>
               <optgroup label="数学・数値 (Math & Numbers)">
                 <option value="ROUND">ROUND / CEILING / FLOOR（端数処理・切り上げ切り捨て）</option>
@@ -1634,6 +1636,16 @@
         `;
         updateGeneratedExpression();
       }
+      else if (category === 'LAT' || category === 'LONG') {
+        const funcName = category;
+        dynamicInputs.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <label class="block text-slate-400 font-medium">対象のLatLongカラム / 式</label>
+            <select id="latlong-target-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
       else if (category === 'ROUND') {
         dynamicInputs.innerHTML = `
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -2193,6 +2205,13 @@
         syntaxText = '構文: LATLONG(latitude, longitude)';
         descText = '指定された緯度（' + lat + '）と経度（' + lng + '）の数値から、AppSheetで扱えるLatLongオブジェクトを生成します。';
         advice = '固定の店舗位置やマップの初期表示ピンをコード上で定義したい場合に利用します。';
+      }
+      else if (category === 'LAT' || category === 'LONG') {
+        const col = document.getElementById('latlong-target-col')?.value || 'Location';
+        expression = category + '([' + col + '])';
+        syntaxText = '構文: ' + category + '(lat-long)';
+        descText = 'LatLong型の値（[' + col + ']）から、' + (category === 'LAT' ? '緯度（Latitude）' : '経度（Longitude）') + 'の数値を抽出します。';
+        advice = '位置情報から特定の座標値だけを取り出して数値計算や別カラムとの比較を行いたい場合に便利です。';
       }
       else if (category === 'ROUND') {
         const func = document.getElementById('round-func')?.value || 'ROUND';
