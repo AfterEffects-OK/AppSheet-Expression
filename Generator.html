@@ -204,6 +204,7 @@
               <optgroup label="リスト・抽出 (List & Filter)">
                 <option value="SELECT">SELECT（条件に一致するリスト抽出）</option>
                 <option value="FILTER">FILTER（条件に一致する行キーのリスト抽出）</option>
+                <option value="ORDERBY">ORDERBY（リストを指定列で並び替え）</option>
                 <option value="LIST">LIST（任意の値からリストを作成）</option>
                 <option value="SPLIT">SPLIT（文字列を区切り文字で分割してリスト化）</option>
                 <option value="INTERSECT">INTERSECT（2つのリストの積集合/共通要素）</option>
@@ -257,12 +258,17 @@
                 <option value="ROUND">ROUND / CEILING / FLOOR（端数処理・切り上げ切り捨て）</option>
                 <option value="ABS">ABS（絶対値の計算）</option>
                 <option value="RANDBETWEEN">RANDBETWEEN（指定範囲のランダム整数の生成）</option>
+                <option value="MOD">MOD（割り算の余りを算出）</option>
+                <option value="POWER">POWER（べき乗・累乗の計算）</option>
               </optgroup>
               <optgroup label="画面遷移・リンク (Navigation & Links)">
                 <option value="LINKTOVIEW">LINKTOVIEW（指定ビューへ遷移）</option>
                 <option value="LINKTOROW">LINKTOROW（特定レコードのビューへ遷移）</option>
                 <option value="LINKTOFORM">LINKTOFORM（初期値付きフォームへ遷移）</option>
                 <option value="LINKTOFILTEREDVIEW">LINKTOFILTEREDVIEW（条件絞り込みビューへ遷移）</option>
+              </optgroup>
+              <optgroup label="テキスト・その他 (Text & Others)">
+                <option value="OCRTEXT">OCRTEXT（画像から文字を自動抽出）</option>
               </optgroup>
               <optgroup label="高度な合成関数 (Advanced Composition)">
                 <option value="COMPOSITE_IF_SUM">条件付き集計のしきい値判定 (IF + SUM + SELECT)</option>
@@ -1727,6 +1733,67 @@
         `;
         onAggTableChange();
       }
+      else if (category === 'MOD') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">被除数 (割られる数)</label>
+              <input type="text" id="mod-num" value="[数量]" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">除数 (割る数)</label>
+              <input type="text" id="mod-divisor" value="5" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'POWER') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">底 (基の数値)</label>
+              <input type="text" id="power-base" value="2" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">指数 (べき乗数)</label>
+              <input type="text" id="power-exp" value="3" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'OCRTEXT') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <label class="block text-slate-400 font-medium">対象の画像/ドキュメントカラム</label>
+            <select id="ocr-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'ORDERBY') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div class="sm:col-span-3">
+              <label class="block text-slate-400 mb-1.5 font-medium">並び替える対象リスト (SELECT等)</label>
+              <input type="text" id="orderby-list" value='SELECT(商品マスタ[ID商品], TRUE)' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">基準にする並び替えカラム</label>
+              <select id="orderby-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">方向 (昇順/降順)</label>
+              <select id="orderby-dir" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">
+                <option value="TRUE">昇順 (True = 昇順)</option>
+                <option value="FALSE">降順 (False = 降順)</option>
+              </select>
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
       else if (category === 'LINKTOVIEW') {
         dynamicInputs.innerHTML = `
           <div class="space-y-2 text-xs">
@@ -2282,6 +2349,39 @@
         syntaxText = '構文: ' + category + '(lat-long)';
         descText = 'LatLong型の値（' + targetVal + '）から、' + (category === 'LAT' ? '緯度（Latitude）' : '経度（Longitude）') + 'の数値を抽出します。';
         advice = (targetVal === 'HERE()' ? '現在地（HERE()）から直接数値の' + (category === 'LAT' ? '緯度' : '経度') + 'を取得したい場合に最適な記述です。' : '指定した位置情報カラムから座標の数値だけを取り出して計算や比較を行いたい場合に便利です。');
+      }
+      else if (category === 'MOD') {
+        const num = document.getElementById('mod-num')?.value || '[数量]';
+        const divisor = document.getElementById('mod-divisor')?.value || '2';
+        expression = 'MOD(' + num + ', ' + divisor + ')';
+        syntaxText = '構文: MOD(number, divisor)';
+        descText = '数値（' + num + '）を別の数値（' + divisor + '）で割ったときの余りを算出します。';
+        advice = '偶数・奇数の判定や、一定間隔ごとの周期処理を行いたい場合に活用します。';
+      }
+      else if (category === 'POWER') {
+        const base = document.getElementById('power-base')?.value || '2';
+        const exp = document.getElementById('power-exp')?.value || '3';
+        expression = 'POWER(' + base + ', ' + exp + ')';
+        syntaxText = '構文: POWER(base, exponent)';
+        descText = '底（' + base + '）の指数（' + exp + '）乗（累乗）を計算します。';
+        advice = '複利計算や特殊な数学的モデル、面積・体積などの計算で使用されます。';
+      }
+      else if (category === 'OCRTEXT') {
+        const col = document.getElementById('ocr-col')?.value || 'ImageCol';
+        expression = 'OCRTEXT([' + col + '])';
+        syntaxText = '構文: OCRTEXT(image-column)';
+        descText = 'Image型またはSignature型のカラム（[' + col + ']）に保存された画像データをスキャンし、含まれているテキストを自動抽出します。';
+        advice = '名刺や領収書、レシートなどをアプリで撮影した際、文字情報を自動でテキストフィールドに読み込ませたい場合に非常に強力です。';
+      }
+      else if (category === 'ORDERBY') {
+        const list = document.getElementById('orderby-list')?.value || 'LIST()';
+        const col = document.getElementById('orderby-col')?.value || 'Column';
+        const ascending = document.getElementById('orderby-dir')?.value || 'TRUE';
+        
+        expression = 'ORDERBY(' + list + ', ' + col + ', ' + ascending + ')';
+        syntaxText = '構文: ORDERBY(list, column, ascending?)';
+        descText = 'リスト（' + list + '）を、指定したカラム（' + col + '）の値を基準に並び替えます（昇順/降順: ' + ascending + '）。';
+        advice = 'SELECTやFILTERで取得したレコードリストの表示順を整理したい場合に必須となる関数です。';
       }
       else if (category === 'ROUND') {
         const func = document.getElementById('round-func')?.value || 'ROUND';
