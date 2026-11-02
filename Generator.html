@@ -258,6 +258,12 @@
                 <option value="ABS">ABS（絶対値の計算）</option>
                 <option value="RANDBETWEEN">RANDBETWEEN（指定範囲のランダム整数の生成）</option>
               </optgroup>
+              <optgroup label="画面遷移・リンク (Navigation & Links)">
+                <option value="LINKTOVIEW">LINKTOVIEW（指定ビューへ遷移）</option>
+                <option value="LINKTOROW">LINKTOROW（特定レコードのビューへ遷移）</option>
+                <option value="LINKTOFORM">LINKTOFORM（初期値付きフォームへ遷移）</option>
+                <option value="LINKTOFILTEREDVIEW">LINKTOFILTEREDVIEW（条件絞り込みビューへ遷移）</option>
+              </optgroup>
               <optgroup label="高度な合成関数 (Advanced Composition)">
                 <option value="COMPOSITE_IF_SUM">条件付き集計のしきい値判定 (IF + SUM + SELECT)</option>
                 <option value="COMPOSITE_ISBLANK_FILTER">重複登録防止バリデーション (ISBLANK + FILTER)</option>
@@ -1721,6 +1727,60 @@
         `;
         onAggTableChange();
       }
+      else if (category === 'LINKTOVIEW') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <label class="block text-slate-400 font-medium">遷移先のビュー名</label>
+            <input type="text" id="link-viewname" value="注文履歴_Detail" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'LINKTOROW') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">レコードの行キー (ID/Ref列)</label>
+              <select id="link-row-key" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">表示するビュー名</label>
+              <input type="text" id="link-row-view" value="商品マスタ_Detail" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'LINKTOFORM') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">対象のフォームビュー名</label>
+              <input type="text" id="link-form-name" value="売上履歴_Form" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">初期値をセットするカラム</label>
+              <select id="link-form-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'LINKTOFILTEREDVIEW') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">ベースのビュー名</label>
+              <input type="text" id="link-filt-view" value="商品マスタ_Gallery" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">絞り込み条件式 (Filter Condition)</label>
+              <input type="text" id="link-filt-cond" value='[ステータス] = "有効"' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
       else if (category === 'COMPOSITE_IF_SUM') {
           dynamicInputs.innerHTML = `
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -2246,6 +2306,37 @@
         descText = min + ' から ' + max + ' の範囲でランダムな整数を生成します。';
         advice = '仮IDの生成やテストデータのランダム割り当てなどで活用できます。';
       } 
+      else if (category === 'LINKTOVIEW') {
+        const viewName = document.getElementById('link-viewname')?.value || 'ViewName';
+        expression = 'LINKTOVIEW("' + viewName + '")';
+        syntaxText = '構文: LINKTOVIEW(view-name)';
+        descText = 'アプリ内の指定したビュー（"' + viewName + '"）へ画面を遷移させます。';
+        advice = 'アクション（Behavior）の「Do this」に設定して、ボタンタップで特定のダッシュボードや一覧画面を開かせる際に使用します。';
+      }
+      else if (category === 'LINKTOROW') {
+        const key = document.getElementById('link-row-key')?.value || '[ID]';
+        const viewName = document.getElementById('link-row-view')?.value || 'Detail_View';
+        expression = 'LINKTOROW(' + key + ', "' + viewName + '")';
+        syntaxText = '構文: LINKTOROW(row-key, view-name)';
+        descText = '指定したレコードの行キー（' + key + '）に対応する詳細・編集画面（"' + viewName + '"）へ直接ジャンプします。';
+        advice = '関連する親や子のレコードへ素早くアクセスさせたいときのアクション設定に必須の関数です。';
+      }
+      else if (category === 'LINKTOFORM') {
+        const formName = document.getElementById('link-form-name')?.value || 'Form_View';
+        const col = document.getElementById('link-form-col')?.value || '[Column]';
+        expression = 'LINKTOFORM("' + formName + '", ' + col + ', ' + thisRowPrefix + '[' + col.replace(/[\[\]]/g, '') + '])';
+        syntaxText = '構文: LINKTOFORM(form-name, column1, value1, ...)';
+        descText = '新規作成・編集フォーム（"' + formName + '"）を開き、項目（' + col + '）に初期値を自動入力した状態で起動します。';
+        advice = '現在のレコードのデータを引き継いだまま、別のテーブルのレコードを新規作成する際などに非常に強力です。';
+      }
+      else if (category === 'LINKTOFILTEREDVIEW') {
+        const viewName = document.getElementById('link-filt-view')?.value || 'View_Name';
+        const cond = document.getElementById('link-filt-cond')?.value || 'TRUE';
+        expression = 'LINKTOFILTEREDVIEW("' + viewName + '", ' + cond + ')';
+        syntaxText = '構文: LINKTOFILTEREDVIEW(view-name, condition)';
+        descText = '指定したビュー（"' + viewName + '"）を、条件（' + cond + '）に一致するレコードだけに絞り込んだ状態で表示します。';
+        advice = '特定の条件を満たすデータ群だけをハイライトしてユーザーに確認させたい場合のカストマイズに便利です。';
+      }
       else if (category === 'COMPOSITE_IF_SUM') {
         const tIdx = document.getElementById('comp-sum-table')?.value;
         const targetTable = schema[tIdx];
