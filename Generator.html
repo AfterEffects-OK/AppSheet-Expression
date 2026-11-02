@@ -248,6 +248,8 @@
               <optgroup label="ユーザー・環境 (User & Context)">
                 <option value="USER_INFO">USEREMAIL / USERNAME / USERROLE（ログイン情報）</option>
                 <option value="CONTEXT">CONTEXT("View") / CONTEXT("AppName")（画面情報）</option>
+                <option value="HERE">HERE（現在地のGPS座標取得）</option>
+                <option value="LATLONG">LATLONG（緯度経度からLatLong値の構築）</option>
               </optgroup>
               <optgroup label="数学・数値 (Math & Numbers)">
                 <option value="ROUND">ROUND / CEILING / FLOOR（端数処理・切り上げ切り捨て）</option>
@@ -1609,6 +1611,29 @@
         `;
         updateGeneratedExpression();
       }
+      else if (category === 'HERE') {
+        dynamicInputs.innerHTML = `
+          <div class="text-xs text-slate-400">
+            <p>引数は必要ありません。デバイスの現在位置（GPS座標）を自動取得します。</p>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
+      else if (category === 'LATLONG') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">緯度 (Latitude)</label>
+              <input type="text" id="latlong-lat" value="34.6617" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">経度 (Longitude)</label>
+              <input type="text" id="latlong-lng" value="133.9350" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
       else if (category === 'ROUND') {
         dynamicInputs.innerHTML = `
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -2154,6 +2179,20 @@
         syntaxText = '構文: CONTEXT(property_name)';
         descText = 'アプリの現在の実行環境情報（' + opt + '）を取得します。';
         advice = '特定の画面（Formビューなど）だけでアクションボタンを表示させたい場合の [Show_If] 条件に重宝します。';
+      }
+      else if (category === 'HERE') {
+        expression = 'HERE()';
+        syntaxText = '構文: HERE()';
+        descText = 'デバイスの現在地をGPSから取得し、LatLong（緯度経度）型の値を返します。';
+        advice = 'LatLong型のカラムのInitial Value（初期値）に指定することで、フォームを開いた瞬間の現在地を自動記録できます。';
+      }
+      else if (category === 'LATLONG') {
+        const lat = document.getElementById('latlong-lat')?.value || '34.6617';
+        const lng = document.getElementById('latlong-lng')?.value || '133.9350';
+        expression = 'LATLONG(' + lat + ', ' + lng + ')';
+        syntaxText = '構文: LATLONG(latitude, longitude)';
+        descText = '指定された緯度（' + lat + '）と経度（' + lng + '）の数値から、AppSheetで扱えるLatLongオブジェクトを生成します。';
+        advice = '固定の店舗位置やマップの初期表示ピンをコード上で定義したい場合に利用します。';
       }
       else if (category === 'ROUND') {
         const func = document.getElementById('round-func')?.value || 'ROUND';
