@@ -2499,16 +2499,51 @@
       if (textAdvice) textAdvice.textContent = advice;
       
       const FUNCTION_HELP_URLS = {
-        'LOOKUP': 'https://support.google.com/appsheet/answer/10107410?hl=ja',
-        'SELECT': 'https://support.google.com/appsheet/answer/10108207?hl=ja',
-        'FILTER': 'https://support.google.com/appsheet/answer/10108196?hl=ja',
-        'REF_ROWS': 'https://support.google.com/appsheet/answer/10107364?hl=ja',
-        'IFS': 'https://support.google.com/appsheet/answer/10107912?hl=ja',
-        'IF': 'https://support.google.com/appsheet/answer/10107912?hl=ja',
-        'SWITCH': 'https://support.google.com/appsheet/answer/10107912?hl=ja',
-        'TODAY_NOW': 'https://support.google.com/appsheet/answer/10107316?hl=ja',
-        'USER_INFO': 'https://support.google.com/appsheet/answer/10107319?hl=ja',
-        'DEFAULT': 'https://support.google.com/appsheet/table/10104782?hl=ja'
+          // 1. 個別ヘルプが存在する主要関数
+          'LOOKUP': 'https://support.google.com/appsheet/answer/10107410?hl=ja',
+          'SELECT': 'https://support.google.com/appsheet/answer/10108207?hl=ja',
+          'FILTER': 'https://support.google.com/appsheet/answer/10108196?hl=ja',
+          'REF_ROWS': 'https://support.google.com/appsheet/answer/10107364?hl=ja',
+          'IFS': 'https://support.google.com/appsheet/answer/10107912?hl=ja',
+          'IF': 'https://support.google.com/appsheet/answer/10107912?hl=ja',
+          'SWITCH': 'https://support.google.com/appsheet/answer/10107912?hl=ja',
+          'TODAY_NOW': 'https://support.google.com/appsheet/answer/10107316?hl=ja',
+          'USER_INFO': 'https://support.google.com/appsheet/answer/10107319?hl=ja',
+      
+          // 2. 個別URLがない、または一覧ページへ共通化する関数（空欄またはデフォルト一覧へ誘導）
+          'DEREF': 'https://support.google.com/appsheet/table/10104782?hl=ja',
+          'LIST': 'https://support.google.com/appsheet/table/10104782?hl=ja',
+          'SPLIT': 'https://support.google.com/appsheet/answer/10107984?hl=ja',
+          'INTERSECT': 'https://support.google.com/appsheet/answer/10107963?hl=ja',
+          'UNIQUE': 'https://support.google.com/appsheet/answer/10107368?hl=ja',
+          'AGGREGATE': 'https://support.google.com/appsheet/table/10104782?hl=ja',
+          'STDEVP': 'https://support.google.com/appsheet/answer/10107930?hl=ja',
+          'AND_OR': 'https://support.google.com/appsheet/answer/10107398?hl=ja',
+          'NOT': '',
+          'EXISTS': '',
+          'ISBLANK': '',
+          'IN': '',
+          'CONTAINS': '',
+          'CONCATENATE': '',
+          'TEXT': '',
+          'LEFT_RIGHT_MID': '',
+          'SUBSTITUTE': '',
+          'INDEX': '',
+          'LOWER_UPPER': '',
+          'DATE_CONSTRUCT': '',
+          'WORKDAY': '',
+          'EOMONTH': '',
+          'CONTEXT': '',
+          'ROUND': '',
+          'ABS': 'https://support.google.com/appsheet/answer/10107329?hl=ja',
+          'RANDBETWEEN': '',
+          'COMPOSITE_IF_SUM': '',
+          'COMPOSITE_ISBLANK_FILTER': '',
+          'COMPOSITE_INDEX_SPLIT': '',
+          'COMPOSITE_IN_SELECT': '',
+      
+          // 3. デフォルト（上記以外ですべての関数を網羅している公式一覧ページ）
+          'DEFAULT': 'https://support.google.com/appsheet/table/10104782?hl=ja'
       };
 
       const helpLinkEl = document.getElementById('link-official-help');
