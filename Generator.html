@@ -64,13 +64,24 @@
         <div>
           <h1 class="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2">
             AppSheet Expression Builder
-            <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">v3.1 Smart UI</span>
+            <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">v3.2 Undo/Redo</span>
           </h1>
           <p class="text-[11px] text-slate-400 hidden sm:block">テーブル構造からAppSheet全関数構文を自動生成・解説</p>
         </div>
       </div>
 
       <div class="flex items-center space-x-2">
+        <!-- ▼ 追加：Undo / Redo ボタン -->
+        <div class="flex items-center bg-slate-800/80 rounded-xl border border-slate-700/80 overflow-hidden mr-1">
+          <button type="button" id="btn-undo" onclick="performUndo()" disabled class="px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent transition flex items-center gap-1 cursor-pointer" title="元に戻す (Ctrl+Z)">
+            <i data-lucide="undo-2" class="w-3.5 h-3.5"></i>
+          </button>
+          <div class="w-px h-4 bg-slate-700"></div>
+          <button type="button" id="btn-redo" onclick="performRedo()" disabled class="px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent transition flex items-center gap-1 cursor-pointer" title="やり直し (Ctrl+Y)">
+            <i data-lucide="redo-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
         <button id="btn-open-import-modal" class="px-3 py-1.5 text-xs font-medium text-slate-200 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded-xl shadow-md shadow-blue-600/20 transition flex items-center gap-1.5 cursor-pointer">
           <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
           <span class="hidden sm:inline">一括インポート / CSV</span>
@@ -486,6 +497,70 @@
 
     // State
     let schema = [];
+    
+    // ▼ Undo/Redo用の履歴管理変数
+    let historyStack = [];
+    let redoStack = [];
+    const MAX_HISTORY = 30;
+
+    // 履歴の状態を記録する
+    function pushHistory() {
+      // 現在の状態をディープコピーして履歴に保存
+      historyStack.push(JSON.stringify(schema));
+      if (historyStack.length > MAX_HISTORY) {
+        historyStack.shift(); // 最大数を超えたら古いものを削除
+      }
+      redoStack = []; // 新しい操作が行われたらRedoスタックはクリア
+      updateUndoRedoUI();
+    }
+
+    // 実際のセーブ＆UI更新（履歴記録なし版）
+    function saveSchemaWithoutHistory() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(schema));
+      statTableCount.textContent = schema.length;
+      renderDynamicForm();
+    }
+
+    // スキーマ変更を伴う保存（履歴を記録する）
+    function saveSchema() {
+      pushHistory();
+      saveSchemaWithoutHistory();
+    }
+
+    // Undo（元に戻す）の実行
+    function performUndo() {
+      if (historyStack.length === 0) return;
+      // 現在の状態をRedoスタックに退避
+      redoStack.push(JSON.stringify(schema));
+      // 履歴から1つ前の状態を復元
+      const prev = historyStack.pop();
+      schema = JSON.parse(prev);
+      saveSchemaWithoutHistory();
+      renderSchema();
+      showToast('操作を元に戻しました (Undo)');
+    }
+
+    // Redo（やり直し）の実行
+    function performRedo() {
+      if (redoStack.length === 0) return;
+      // 現在の状態をHistoryスタックに退避
+      historyStack.push(JSON.stringify(schema));
+      // Redoスタックから進める状態を復元
+      const next = redoStack.pop();
+      schema = JSON.parse(next);
+      saveSchemaWithoutHistory();
+      renderSchema();
+      showToast('操作をやり直しました (Redo)');
+    }
+
+    // ボタンの有効・無効を切り替えるUI更新
+    function updateUndoRedoUI() {
+      const btnUndo = document.getElementById('btn-undo');
+      const btnRedo = document.getElementById('btn-redo');
+      if (btnUndo) btnUndo.disabled = historyStack.length === 0;
+      if (btnRedo) btnRedo.disabled = redoStack.length === 0;
+    }
+    
     const STORAGE_KEY = 'appsheet_builder_schema_v1';
 
     // DOM Elements
@@ -607,8 +682,22 @@
           }
         });
       });
-    }
 
+      document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+          e.preventDefault();
+          if (e.shiftKey) {
+            performRedo(); // Ctrl+Shift+Z でもRedo可能に
+          } else {
+            performUndo(); // Ctrl+Z でUndo
+          }
+        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+          e.preventDefault();
+          performRedo(); // Ctrl+Y でRedo
+        }
+      });
+    }
+    
     function initModalEvents() {
       btnOpenModal.addEventListener('click', () => {
         importModal.classList.remove('opacity-0', 'pointer-events-none');
