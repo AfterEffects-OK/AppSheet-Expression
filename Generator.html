@@ -210,8 +210,13 @@
                 <option value="UNIQUE">UNIQUE（リストから重複を除去）</option>
               </optgroup>
               <optgroup label="集計・計算 (Aggregation)">
-                <option value="AGGREGATE">SUM / COUNT / AVERAGE / MAX / MIN + SELECT</option>
-                <option value="STDEVP">STDEVP（リストの標準偏差の算出）</option>
+                <option value="SUM">SUM（合計）</option>
+                <option value="COUNT">COUNT（件数）</option>
+                <option value="AVERAGE">AVERAGE（平均）</option>
+                <option value="MAX">MAX（最大値）</option>
+                <option value="MIN">MIN（最小値）</option>
+                <option value="MAXROW">MAXROW（最大値となる行キーの取得）</option>
+                <option value="MINROW">MINROW（最小値となる行キーの取得）</option>
               </optgroup>
               <optgroup label="条件・制御 (Conditional Logic)">
                 <option value="IFS">IFS（多岐条件分岐）</option>
@@ -1195,6 +1200,22 @@
         `;
         onAggTableChange();
       }
+      else if (category === 'MAXROW' || category === 'MINROW') {
+        const funcName = category;
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">対象テーブル</label>
+              <select id="maxrow-target-table" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${tableOptions}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">比較・評価する数値/日付カラム</label>
+              <select id="maxrow-target-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            </div>
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
       else if (category === 'STDEVP') {
         dynamicInputs.innerHTML = `
           <div class="space-y-2 text-xs">
@@ -1918,6 +1939,18 @@
             descText = '「' + targetTable.name + '」テーブル内に、一致するレコードが1件以上存在するか（TRUE/FALSE）を判定します。';
             advice = '[Show_If] や [Editable_If] などの表示・編集制御ロジックに利用できます。';
           }
+        }
+      }
+      else if (category === 'MAXROW' || category === 'MINROW') {
+        const tIdx = document.getElementById('maxrow-target-table')?.value;
+        const targetTable = schema[tIdx];
+        const targetCol = document.getElementById('maxrow-target-col')?.value || 'Amount';
+  
+        if (targetTable) {
+          expression = category + '("' + targetTable.name + '", [' + targetCol + '])';
+          syntaxText = '構文: ' + category + '(table-name, column-name)';
+          descText = '「' + targetTable.name + '」テーブルの中で、[' + targetCol + '] が' + (category === 'MAXROW' ? '最大' : '最小') + 'となるレコードの行キー（ID）を1件返します。';
+          advice = '取得したレコードのキーを使って、De-reference構造（[' + category + '列].[取得項目]）と組み合わせることで、最高額の注文日や最新のステータスなどを直接参照できます。';
         }
       }
       else if (category === 'ISBLANK') {
