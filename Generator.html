@@ -204,6 +204,7 @@
               <optgroup label="リスト・抽出 (List & Filter)">
                 <option value="SELECT">SELECT（条件に一致するリスト抽出）</option>
                 <option value="FILTER">FILTER（条件に一致する行キーのリスト抽出）</option>
+                <option value="SORT">SORT（リストを並び替え）</option>
                 <option value="ORDERBY">ORDERBY（リストを指定列で並び替え）</option>
                 <option value="LIST">LIST（任意の値からリストを作成）</option>
                 <option value="SPLIT">SPLIT（文字列を区切り文字で分割してリスト化）</option>
@@ -1772,6 +1773,15 @@
         `;
         updateGeneratedExpression();
       }
+      else if (category === 'SORT') {
+        dynamicInputs.innerHTML = `
+          <div class="space-y-2 text-xs">
+            <label class="block text-slate-400 font-medium">並び替える対象のリスト (SELECT等)</label>
+            <input type="text" id="sort-list" value='SELECT(商品マスタ[商品名], TRUE)' oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none">
+          </div>
+        `;
+        updateGeneratedExpression();
+      }
       else if (category === 'ORDERBY') {
         dynamicInputs.innerHTML = `
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
@@ -2372,6 +2382,13 @@
         syntaxText = '構文: OCRTEXT(image-column)';
         descText = 'Image型またはSignature型のカラム（[' + col + ']）に保存された画像データをスキャンし、含まれているテキストを自動抽出します。';
         advice = '名刺や領収書、レシートなどをアプリで撮影した際、文字情報を自動でテキストフィールドに読み込ませたい場合に非常に強力です。';
+      }
+      else if (category === 'SORT') {
+        const list = document.getElementById('sort-list')?.value || 'LIST()';
+        expression = 'SORT(' + list + ')';
+        syntaxText = '構文: SORT(list)';
+        descText = '指定したリスト（' + list + '）の要素をアルファベット順・昇順に並び替えます。';
+        advice = '単一の列や値のリストをシンプルに並び替えて重複を除去したい場合や、アルファベット/数値順できれいに整列させたいときに便利です。';
       }
       else if (category === 'ORDERBY') {
         const list = document.getElementById('orderby-list')?.value || 'LIST()';
