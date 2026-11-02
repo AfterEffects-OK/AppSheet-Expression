@@ -700,7 +700,7 @@
           } else {
             performUndo();
           }
-        } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        } else if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z') {
           e.preventDefault();
           performRedo();
         }
