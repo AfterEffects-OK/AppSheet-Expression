@@ -1,5 +1,4 @@
-// AppSheet Expression Builder - Schema & Storage Management
-
+// Schema Management & Storage
 export let schema = JSON.parse(localStorage.getItem('appsheet_schema')) || [
     { id: 't1', name: '注文履歴', isOpen: true, columns: [
         { name: 'ID注文', type: 'Text' }, { name: 'ID顧客', type: 'Ref' }, { name: '金額', type: 'Price' },
@@ -24,7 +23,6 @@ export function autoDetectType(colName) {
     return 'Text';
 }
 
-// スプレッドシートの草案（タブ区切り/カンマ区切り）を解析してテーブルを一括追加
 export function importSchemaFromText(text) {
     const lines = text.split(/[\r\n]+/);
     let importedCount = 0;
@@ -59,4 +57,9 @@ export function importSchemaFromText(text) {
         saveSchema();
     }
     return importedCount;
+}
+
+export function setSchema(newSchema) {
+    schema = newSchema;
+    saveSchema();
 }
