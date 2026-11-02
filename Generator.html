@@ -1641,7 +1641,8 @@
         dynamicInputs.innerHTML = `
           <div class="space-y-2 text-xs">
             <label class="block text-slate-400 font-medium">対象のLatLongカラム / 式</label>
-            <select id="latlong-target-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            <input type="text" id="latlong-target-col" value="HERE()" oninput="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 font-mono focus:outline-none focus:border-blue-500">
+            <p class="text-[11px] text-slate-500">※ カラム名（例: [位置情報]）のほか、HERE() などの式も直接入力できます。</p>
           </div>
         `;
         updateGeneratedExpression();
@@ -2207,10 +2208,12 @@
         advice = '固定の店舗位置やマップの初期表示ピンをコード上で定義したい場合に利用します。';
       }
       else if (category === 'LAT' || category === 'LONG') {
-        const col = document.getElementById('latlong-target-col')?.value || 'Location';
-        expression = category + '([' + col + '])';
+        const col = document.getElementById('latlong-target-col')?.value || 'HERE()';
+        // 入力された値が [ ] で囲まれておらず、関数やプレフィックス等でなければ括弧を付与、などの調整
+        const formattedCol = col.startsWith('(') || col.startsWith('[') ? col : '[' + col + ']';
+        expression = category + '(' + formattedCol + ')';
         syntaxText = '構文: ' + category + '(lat-long)';
-        descText = 'LatLong型の値（[' + col + ']）から、' + (category === 'LAT' ? '緯度（Latitude）' : '経度（Longitude）') + 'の数値を抽出します。';
+        descText = 'LatLong型の値（' + formattedCol + '）から、' + (category === 'LAT' ? '緯度（Latitude）' : '経度（Longitude）') + 'の数値を抽出します。';
         advice = '位置情報から特定の座標値だけを取り出して数値計算や別カラムとの比較を行いたい場合に便利です。';
       }
       else if (category === 'ROUND') {
