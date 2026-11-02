@@ -1,52 +1,18 @@
-// AppSheet Expression Builder - Expression Generation Logic
+// Expression Generation Logic
+import { FUNCTION_HELP_URLS } from './functions.js';
 
 export const functionsList = [
-    { 
-        id: 'LOOKUP', 
-        label: 'LOOKUP（他テーブルから1項目取得）', 
-        syntax: 'LOOKUP(lookup-value, table-name, lookup-column, return-column)', 
-        exp: '指定テーブルを検索し、一致するレコードの指定列の値を返します。',
-        helpUrl: 'https://support.google.com/appsheet/answer/10107471?hl=ja'
-    },
-    { 
-        id: 'SELECT', 
-        label: 'SELECT（条件に一致するリスト抽出）', 
-        syntax: 'SELECT(table-name[column-name], condition)', 
-        exp: '条件を満たす行の特定カラムの値をリスト形式で抽出します。',
-        helpUrl: 'https://support.google.com/appsheet/answer/10107771?hl=ja'
-    },
-    { 
-        id: 'SUM', 
-        label: 'SUM（合計）', 
-        syntax: 'SUM(SELECT(...))', 
-        exp: '抽出された数値リストの合計値を算出します。',
-        helpUrl: 'https://support.google.com/appsheet/answer/10107358?hl=ja'
-    },
-    { 
-        id: 'COUNT', 
-        label: 'COUNT（件数）', 
-        syntax: 'COUNT(SELECT(...))', 
-        exp: '抽出されたリストの要素数（件数）をカウントします。',
-        helpUrl: 'https://github.com/AfterEffects-OK/answer/10107358?hl=ja'
-    },
-    { 
-        id: 'CONCATENATE', 
-        label: 'CONCATENATE（文字列の結合）', 
-        syntax: 'CONCATENATE(text1, text2, ...)', 
-        exp: '複数の文字列や列の値を結合します。',
-        helpUrl: 'https://support.google.com/appsheet/answer/10107772?hl=ja'
-    }
+    { id: 'LOOKUP', label: 'LOOKUP（他テーブルから1項目取得）', syntax: 'LOOKUP(lookup-value, table-name, lookup-column, return-column)', exp: '指定テーブルを検索し、一致するレコードの指定列の値を返します。' },
+    { id: 'SELECT', label: 'SELECT（条件に一致するリスト抽出）', syntax: 'SELECT(table-name[column-name], condition)', exp: '条件を満たす行の特定カラムの値をリスト形式で抽出します。' },
+    { id: 'SUM', label: 'SUM（合計）', syntax: 'SUM(SELECT(...))', exp: '抽出された数値リストの合計値を算出します。' },
+    { id: 'COUNT', label: 'COUNT（件数）', syntax: 'COUNT(SELECT(...))', exp: '抽出されたリストの要素数（件数）をカウントします。' },
+    { id: 'CONCATENATE', label: 'CONCATENATE（文字列の結合）', syntax: 'CONCATENATE(text1, text2, ...)', exp: '複数の文字列や列の値を結合します。' }
 ];
 
-export function generateAppSheetExpression(fnId, schema) {
+export function generateExpression(fnId, schema) {
     let expr = '';
     let explanation = '';
-    let helpUrl = 'https://support.google.com/appsheet/answer/10107471?hl=ja';
-
-    const targetFn = functionsList.find(f => f.id === fnId);
-    if (targetFn) {
-        helpUrl = targetFn.helpUrl;
-    }
+    let helpUrl = FUNCTION_HELP_URLS[fnId] || 'https://github.com/repos4/answer/10107471?hl=ja';
 
     if (fnId === 'LOOKUP') {
         const tbl = schema[0] ? schema[0].name : 'Table';
