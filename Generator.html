@@ -505,12 +505,11 @@
 
     // 履歴の状態を記録する
     function pushHistory() {
-      // 現在の状態をディープコピーして履歴に保存
       historyStack.push(JSON.stringify(schema));
       if (historyStack.length > MAX_HISTORY) {
-        historyStack.shift(); // 最大数を超えたら古いものを削除
+        historyStack.shift();
       }
-      redoStack = []; // 新しい操作が行われたらRedoスタックはクリア
+      redoStack = [];
       updateUndoRedoUI();
     }
 
@@ -521,7 +520,7 @@
       renderDynamicForm();
     }
 
-    // 操作時（履歴を1つ積んでから保存）
+    // 操作時（履歴を1つ積んでから保存する）
     function saveSchema() {
       pushHistory();
       saveSchemaWithoutHistory();
