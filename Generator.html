@@ -519,15 +519,19 @@
     }
 
     // ★ 操作を行って変更を確定する際（必ず変更前の状態を履歴に積む）
+    // 操作時：変更前に「現在の状態」を履歴にバックアップしてから保存する
     function saveSchema() {
-      // 変更前の状態を履歴に保存してから、現在のスキーマを保存
       const currentJson = JSON.stringify(schema);
-      // すでにスタックのトップと同じでなければ積む
+      
+      // 履歴の末尾と違う場合のみ、現在の状態をバックアップとしてスタックに積む
       if (historyStack.length === 0 || historyStack[historyStack.length - 1] !== currentJson) {
         historyStack.push(currentJson);
-        if (historyStack.length > MAX_HISTORY) historyStack.shift();
+        if (historyStack.length > MAX_HISTORY) {
+          historyStack.shift();
+        }
       }
-      redoStack = [];
+      
+      redoStack = []; // 新しい操作が行われたらRedoはクリア
       saveSchemaWithoutHistory();
       updateUndoRedoUI();
     }
