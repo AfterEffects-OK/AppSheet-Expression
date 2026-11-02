@@ -1847,9 +1847,8 @@
         descText = 'リスト（' + listExpr + '）の中から重複する要素を除外した一意なリストを生成します。';
         advice = '重複のない選択肢リストをフォームに提示したい場合に便利です。';
       }
-      // 個別選択された集計関数 (SUM, COUNT, AVERAGE, MAX, MIN)
-      else if (['SUM', 'COUNT', 'AVERAGE', 'MAX', 'MIN'].includes(category)) {
-        const func = category;
+      // === SUM の個別処理 ===
+      else if (category === 'SUM') {
         const tIdx = document.getElementById('agg-target-table')?.value;
         const targetTable = schema[tIdx];
         const targetCol = document.getElementById('agg-target-col')?.value || 'Amount';
@@ -1857,10 +1856,70 @@
         const thisRowCol = document.getElementById('agg-thisrow-col')?.value || 'ID';
 
         if (targetTable) {
-          expression = func + '(SELECT(' + targetTable.name + '[' + targetCol + '], [' + condCol + '] = ' + thisRowPrefix + '[' + thisRowCol + ']))';
-          syntaxText = '構文: ' + func + '(SELECT(...))';
-          descText = '「' + targetTable.name + '」から [' + condCol + '] が一致する行を抽出し、その [' + targetCol + '] の' + getFuncJPName(func) + 'を算出します。';
-          advice = '合計や件数を求める定型パターンです。親テーブル側の Virtual Column に設定することで集計値を自動保持できます。';
+          expression = 'SUM(SELECT(' + targetTable.name + '[' + targetCol + '], [' + condCol + '] = ' + thisRowPrefix + '[' + thisRowCol + ']))';
+          syntaxText = '構文: SUM(SELECT(...))';
+          descText = '「' + targetTable.name + '」から [' + condCol + '] が一致する行を抽出し、その [' + targetCol + '] の合計値を算出します。';
+          advice = '合計金額などを求める定型パターンです。親テーブル側の Virtual Column に設定することで集計値を自動保持できます。';
+        }
+      }
+      // === COUNT の個別処理 ===
+      else if (category === 'COUNT') {
+        const tIdx = document.getElementById('agg-target-table')?.value;
+        const targetTable = schema[tIdx];
+        const targetCol = document.getElementById('agg-target-col')?.value || 'ID';
+        const condCol = document.getElementById('agg-cond-col')?.value || 'ID';
+        const thisRowCol = document.getElementById('agg-thisrow-col')?.value || 'ID';
+
+        if (targetTable) {
+          expression = 'COUNT(SELECT(' + targetTable.name + '[' + targetCol + '], [' + condCol + '] = ' + thisRowPrefix + '[' + thisRowCol + ']))';
+          syntaxText = '構文: COUNT(SELECT(...))';
+          descText = '「' + targetTable.name + '」から [' + condCol + '] が一致する行を抽出し、そのレコード数（件数）をカウントします。';
+          advice = '紐づく子レコードの件数や注文回数をカウントする際によく使用される定番のパターンです。';
+        }
+      }
+      // === AVERAGE の個別処理 ===
+      else if (category === 'AVERAGE') {
+        const tIdx = document.getElementById('agg-target-table')?.value;
+        const targetTable = schema[tIdx];
+        const targetCol = document.getElementById('agg-target-col')?.value || 'Amount';
+        const condCol = document.getElementById('agg-cond-col')?.value || 'ID';
+        const thisRowCol = document.getElementById('agg-thisrow-col')?.value || 'ID';
+
+        if (targetTable) {
+          expression = 'AVERAGE(SELECT(' + targetTable.name + '[' + targetCol + '], [' + condCol + '] = ' + thisRowPrefix + '[' + thisRowCol + ']))';
+          syntaxText = '構文: AVERAGE(SELECT(...))';
+          descText = '「' + targetTable.name + '」から [' + condCol + '] が一致する行を抽出し、その [' + targetCol + '] の平均値を算出します。';
+          advice = '評価の平均点や単価の平均などを自動計算したい Virtual Column に最適です。';
+        }
+      }
+      // === MAX の個別処理 ===
+      else if (category === 'MAX') {
+        const tIdx = document.getElementById('agg-target-table')?.value;
+        const targetTable = schema[tIdx];
+        const targetCol = document.getElementById('agg-target-col')?.value || 'Amount';
+        const condCol = document.getElementById('agg-cond-col')?.value || 'ID';
+        const thisRowCol = document.getElementById('agg-thisrow-col')?.value || 'ID';
+
+        if (targetTable) {
+          expression = 'MAX(SELECT(' + targetTable.name + '[' + targetCol + '], [' + condCol + '] = ' + thisRowPrefix + '[' + thisRowCol + ']))';
+          syntaxText = '構文: MAX(SELECT(...))';
+          descText = '「' + targetTable.name + '」から [' + condCol + '] が一致する行を抽出し、その [' + targetCol + '] の最大値を取り出します。';
+          advice = '過去最高額の取引金額や最も遅い日付などを取得する際に活用します。';
+        }
+      }
+      // === MIN の個別処理 ===
+      else if (category === 'MIN') {
+        const tIdx = document.getElementById('agg-target-table')?.value;
+        const targetTable = schema[tIdx];
+        const targetCol = document.getElementById('agg-target-col')?.value || 'Amount';
+        const condCol = document.getElementById('agg-cond-col')?.value || 'ID';
+        const thisRowCol = document.getElementById('agg-thisrow-col')?.value || 'ID';
+
+        if (targetTable) {
+          expression = 'MIN(SELECT(' + targetTable.name + '[' + targetCol + '], [' + condCol + '] = ' + thisRowPrefix + '[' + thisRowCol + ']))';
+          syntaxText = '構文: MIN(SELECT(...))';
+          descText = '「' + targetTable.name + '」から [' + condCol + '] が一致する行を抽出し、その [' + targetCol + '] の最小値を取り出します。';
+          advice = '最安値や最初の登録日（最古の日付）を抽出したい場合に有効です。';
         }
       }
       else if (category === 'MAXROW' || category === 'MINROW') {
