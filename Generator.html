@@ -388,7 +388,7 @@
 
       <!-- Paste Text Area -->
       <div class="space-y-1.5">
-        <label class="text-xs text-slate-400 block">複数行のデータをそのまま貼り付け（A列が先頭項目になります）</label>
+        <label class="text-xs text-slate-400 block">草案シートから複数行のデータをそのまま貼り付け（A列が先頭項目になります）</label>
         <textarea id="modal-paste-text" rows="5" placeholder="例:&#10;ID注文	ID顧客	金額	注文日	ステータス&#10;ID顧客	顧客名	メールアドレス	会員ランク" 
           class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500 placeholder:text-slate-600 resize-none"></textarea>
       </div>
@@ -723,51 +723,62 @@
       if (btnCancelModal) btnCancelModal.addEventListener('click', closeModal);
 
       if (btnSubmitImport) {
-        btnSubmitImport.addEventListener('click', () => {
-          const text = modalPasteText.value.trim();
-          if (!text) {
-            alert('インポートするテキストを入力してください。');
-            return;
-          }
-          const lines = text.split(/[\r\n]+/);
-          let importedCount = 0;
-
-          saveSchema();
-
-          lines.forEach((line, idx) => {
-            const trimmedLine = line.trim();
-            if (!trimmedLine) return;
-            const rawCols = trimmedLine
-              .split(/[\t,]+/)
-              .map(c => c.trim())
-              .filter(Boolean);
-            if (rawCols.length === 0) return;
-
-            let colA = rawCols[0];
-            let tblName = colA.replace(/^ID/, '').trim();
-            if (!tblName) {
-              tblName = 'テーブル_' + (schema.length + 1);
-            }
-            const columns = rawCols.map(c => ({ name: c, type: autoDetectType(c) }));
-            schema.push({
-              id: 'tbl_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substring(2, 5),
-              name: tblName,
-              isOpen: true,
-              columns: columns
-            });
-            importedCount++;
+          btnSubmitImport.addEventListener('click', () => {
+              const text = modalPasteText.value.trim();
+              if (!text) {
+                  alert('インポートするテキストを入力してください。');
+                  return;
+              }
+              // 行ごとに分割（空行や余分な空白を除外）
+              const lines = text.split(/[\r\n]+/);
+              let importedCount = 0;
+              saveSchema();
+      
+              lines.forEach((line, idx) => {
+                  const trimmedLine = line.trim();
+                  if (!trimmedLine) return;
+      
+                  // スプレッドシートからのコピー（タブ区切り or カンマ区切り）を正確に分割
+                  const rawCols = trimmedLine
+                      .split(/[\t,]+/)
+                      .map(c => c.trim().replace(/^["']|["']$/g, '')) // ダブルクォーテーション等があれば除去
+                      .filter(Boolean);
+      
+                  if (rawCols.length === 0) return;
+      
+                  // 1列目（A列）をテーブル名、または先頭項目名として扱う
+                  // 例: A列が "ID注文" の場合、プレフィックスの "ID" を除いた部分や、そのままテーブル名に活用
+                  let firstVal = rawCols[0];
+                  let tblName = firstVal.replace(/^ID/, '').trim();
+                  if (!tblName || tblName === '') {
+                      tblName = 'テーブル_' + (schema.length + 1);
+                  }
+      
+                  // カラム定義の生成（列名から自動型判定）
+                  const columns = rawCols.map(c => ({
+                      name: c,
+                      type: autoDetectType(c)
+                  }));
+      
+                  schema.push({
+                      id: 'tbl_' + Date.now() + '_' + idx + '_' + Math.random().toString(36).substring(2, 5),
+                      name: tblName,
+                      isOpen: true,
+                      columns: columns
+                  });
+                  importedCount++;
+              });
+      
+              if (importedCount === 0) {
+                  alert('有効なスキーマ行が見つかりませんでした。');
+                  return;
+              }
+      
+              saveSchemaWithoutHistory();
+              renderSchema();
+              closeModal();
+              showToast(`${importedCount}件のテーブルを一括インポートしました！`);
           });
-
-          if (importedCount === 0) {
-            alert('有効なスキーマ行が見つかりませんでした。');
-            return;
-          }
-
-          saveSchemaWithoutHistory();
-          renderSchema();
-          closeModal();
-          showToast(`${importedCount}件のテーブルを一括インポートしました！`);
-        });
       }
 
       if (dropZone) {
