@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AppSheet Expression Builder</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Inter & Fira Code -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['Fira Code', 'monospace'],
+          },
+          colors: {
+            appsheet: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#0066ff',
+              600: '#0052cc',
+              700: '#003d99',
+              800: '#1e293b',
+              900: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- 外部CSSの読み込み -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-blue-600 selection:text-white">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur-md sticky top-0 z-50 shadow-lg shadow-slate-950/20">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-gradient-to-tr from-blue-600 to-indigo-600 p-2.5 rounded-xl text-white shadow-md shadow-blue-500/20 ring-1 ring-white/10">
+          <i data-lucide="layers" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2">
+            AppSheet Expression Builder
+            <span class="text-[10px] font-medium text-blue-400">v3.2 beta</span>
+          </h1>
+          <p class="text-[11px] text-slate-400 hidden sm:block">テーブル構造からAppSheet全関数構文を自動生成・解説</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <!-- Undo / Redo ボタン -->
+        <div class="flex items-center bg-slate-800/80 rounded-xl border border-slate-700/80 overflow-hidden mr-1">
+          <button type="button" id="btn-undo" onclick="performUndo()" disabled class="px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent transition flex items-center gap-1 cursor-pointer" title="元に戻す (Ctrl+Z)">
+            <i data-lucide="undo-2" class="w-3.5 h-3.5"></i>
+          </button>
+          <div class="w-px h-4 bg-slate-700"></div>
+          <button type="button" id="btn-redo" onclick="performRedo()" disabled class="px-2.5 py-1.5 text-xs text-slate-300 hover:text-white hover:bg-slate-700 disabled:opacity-30 disabled:hover:bg-transparent transition flex items-center gap-1 cursor-pointer" title="やり直し (Ctrl+Y)">
+            <i data-lucide="redo-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <button id="btn-open-import-modal" class="px-3 py-1.5 text-xs font-medium text-slate-200 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded-xl shadow-md shadow-blue-600/20 transition flex items-center gap-1.5 cursor-pointer">
+          <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">一括インポート / CSV</span>
+        </button>
+        <button id="btn-load-sample" class="px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800/80 hover:bg-slate-700 hover:text-white rounded-xl border border-slate-700/80 transition flex items-center gap-1.5 cursor-pointer">
+          <i data-lucide="database" class="w-3.5 h-3.5 text-blue-400"></i>
+          <span class="hidden sm:inline">サンプル</span>
+        </button>
+        <button id="btn-clear-all" class="px-2.5 py-1.5 text-xs font-medium text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 rounded-xl border border-rose-500/20 transition flex items-center gap-1 cursor-pointer" title="全クリア">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        </button>
+        <div class="h-4 w-px bg-slate-800 mx-1"></div>
+        <button type="button" onclick="openHelpModal()" class="px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs rounded-xl border border-slate-700/80 transition flex items-center gap-1.5 cursor-pointer">
+          <i data-lucide="help-circle" class="w-3.5 h-3.5 text-blue-400"></i>
+          <span class="hidden sm:inline">使い方</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+    <!-- Left Sidebar: Schema Manager (5 cols) -->
+    <section class="lg:col-span-5 flex flex-col gap-4">
+      <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-5 shadow-xl backdrop-blur-sm flex flex-col">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 bg-blue-500/10 text-blue-400 rounded-lg">
+              <i data-lucide="table" class="w-4 h-4"></i>
+            </div>
+            <h2 class="font-semibold text-xs text-slate-200 tracking-wide uppercase">1. スキーマ（テーブル構造）</h2>
+          </div>
+          <span class="text-xs text-slate-400">テーブル数: <strong id="stat-table-count" class="text-blue-400 font-mono">0</strong></span>
+        </div>
+
+        <!-- Quick Presets -->
+        <div class="py-2.5 border-b border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <span class="text-[11px] text-slate-400 font-medium flex items-center gap-1.5 shrink-0">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-blue-400"></i>
+            ワンタッププリセット:
+          </span>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <button type="button" onclick="addPresetTable('customer')" class="px-2.5 py-1 text-[11px] bg-slate-950/80 hover:bg-slate-800 text-slate-200 rounded-lg border border-slate-800 hover:border-blue-500/50 transition-all duration-150 flex items-center gap-1.5 cursor-pointer shadow-sm group">
+              <i data-lucide="user" class="w-3 h-3 text-blue-400 group-hover:scale-110 transition-transform"></i> 
+              <span>顧客マスタ</span>
+            </button>
+            <button type="button" onclick="addPresetTable('sales')" class="px-2.5 py-1 text-[11px] bg-slate-950/80 hover:bg-slate-800 text-slate-200 rounded-lg border border-slate-800 hover:border-emerald-500/50 transition-all duration-150 flex items-center gap-1.5 cursor-pointer shadow-sm group">
+              <i data-lucide="shopping-bag" class="w-3 h-3 text-emerald-400 group-hover:scale-110 transition-transform"></i> 
+              <span>売上履歴</span>
+            </button>
+            <button type="button" onclick="addPresetTable('product')" class="px-2.5 py-1 text-[11px] bg-slate-950/80 hover:bg-slate-800 text-slate-200 rounded-lg border border-slate-800 hover:border-amber-500/50 transition-all duration-150 flex items-center gap-1.5 cursor-pointer shadow-sm group">
+              <i data-lucide="package" class="w-3 h-3 text-amber-400 group-hover:scale-110 transition-transform"></i> 
+              <span>商品マスタ</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick One-Line Creation Box -->
+        <div class="pt-3 pb-2">
+          <form id="form-quick-add" class="space-y-2">
+            <div class="flex items-center gap-2">
+              <input type="text" id="quick-tbl-name" placeholder="テーブル名 (例: 注文明細)" 
+                class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+              <button type="submit" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-medium rounded-xl transition flex items-center gap-1 shrink-0 cursor-pointer shadow-md shadow-blue-600/20">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> 追加
+              </button>
+            </div>
+            <textarea id="quick-col-list" rows="2" placeholder="カンマ、タブ、または行データをそのまま貼り付け (例: ID注文	ID顧客	金額)" 
+              class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-[11px] text-slate-300 font-mono focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition placeholder:text-slate-600 resize-none"></textarea>
+          </form>
+        </div>
+
+        <!-- Table List Container -->
+        <div id="schema-container" class="flex-1 overflow-y-auto my-2 space-y-3 pr-1 max-h-[calc(100vh-340px)]">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <div class="pt-3 border-t border-slate-800/80 text-[11px] text-slate-500 flex items-center justify-between">
+          <span class="flex items-center gap-1">
+            <i data-lucide="hard-drive" class="w-3 h-3 text-blue-500"></i> localStorage自動保存有効
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Workspace: Generator & Output (7 cols) -->
+    <main class="lg:col-span-7 space-y-6 flex flex-col">
+
+      <!-- Step 2: Expression Generator Workspace Card -->
+      <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-5 shadow-xl backdrop-blur-sm space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 bg-blue-500/10 text-blue-400 rounded-lg">
+              <i data-lucide="wand-2" class="w-4 h-4"></i>
+            </div>
+            <h2 class="font-semibold text-xs text-slate-200 tracking-wide uppercase">2. 生成したい処理の設定</h2>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-1.5">関数の検索・フィルタ</label>
+              <div class="relative">
+                <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2.5"></i>
+                <input type="text" id="input-func-search" placeholder="関数名で検索 (例: CONCATENATE...)" 
+                  class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+              </div>
+            </div>
+
+            <div class="flex items-end pb-1 justify-end">
+              <label class="inline-flex items-center cursor-pointer select-none bg-slate-950/60 px-3 py-1.5 rounded-xl border border-slate-800/80 hover:border-slate-700 transition">
+                <input type="checkbox" id="toggle-thisrow" class="sr-only peer" checked>
+                <div class="relative w-9 h-5 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-4 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                <span class="ms-2.5 text-xs font-medium text-slate-300 flex items-center gap-1">
+                  <code class="text-blue-400 font-mono text-[11px]">[_THISROW].</code> プレフィックス
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-medium text-slate-300 mb-1.5">生成パターン（関数の選択）</label>
+            <select id="select-category" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition">
+              <optgroup label="参照・リレーション (Ref & Lookup)">
+                <option value="LOOKUP">LOOKUP（他テーブルから1項目取得）</option>
+                <option value="DEREF">De-Reference ( [Ref列].[項目名] 形式の直接参照 )</option>
+                <option value="REF_ROWS">REF_ROWS（関連レコード一覧の自動取得）</option>
+              </optgroup>
+              <optgroup label="リスト・抽出 (List & Filter)">
+                <option value="SELECT">SELECT（条件に一致するリスト抽出）</option>
+                <option value="FILTER">FILTER（条件に一致する行キーのリスト抽出）</option>
+                <option value="SORT">SORT（リストを並び替え）</option>
+                <option value="ORDERBY">ORDERBY（リストを指定列で並び替え）</option>
+                <option value="LIST">LIST（任意の値からリストを作成）</option>
+                <option value="SPLIT">SPLIT（文字列を区切り文字で分割してリスト化）</option>
+                <option value="INTERSECT">INTERSECT（2つのリストの積集合/共通要素）</option>
+                <option value="UNIQUE">UNIQUE（リストから重複を除去）</option>
+              </optgroup>
+              <optgroup label="集計・計算 (Aggregation)">
+                <option value="SUM">SUM（合計）</option>
+                <option value="COUNT">COUNT（件数）</option>
+                <option value="AVERAGE">AVERAGE（平均）</option>
+                <option value="MAX">MAX（最大値）</option>
+                <option value="MIN">MIN（最小値）</option>
+                <option value="MAXROW">MAXROW（最大値となる行キーの取得）</option>
+                <option value="MINROW">MINROW（最小値となる行キーの取得）</option>
+              </optgroup>
+              <optgroup label="条件・制御 (Conditional Logic)">
+                <option value="IFS">IFS（多岐条件分岐）</option>
+                <option value="SWITCH">SWITCH（値の一致による多岐分岐）</option>
+                <option value="IF">IF（単純な真偽分岐）</option>
+                <option value="AND_OR">AND / OR（複数条件の論理結合）</option>
+                <option value="NOT">NOT（条件の反転）</option>
+              </optgroup>
+              <optgroup label="論理・チェック (Validation & Logic)">
+                <option value="EXISTS">存在・重複チェック（ISBLANK + FILTER / COUNT）</option>
+                <option value="ISBLANK">ISBLANK / ISNOTBLANK（空・非空チェック）</option>
+                <option value="IN">IN（値がリストに含まれるか判定）</option>
+                <option value="CONTAINS">CONTAINS（部分一致・文字列判定）</option>
+              </optgroup>
+              <optgroup label="文字列操作 (Text Manipulation)">
+                <option value="CONCATENATE">CONCATENATE（文字列の結合）</option>
+                <option value="TEXT">TEXT（数値・日付のフォーマット変換）</option>
+                <option value="LEFT_RIGHT_MID">LEFT / RIGHT / MID（文字列の一部の抽出）</option>
+                <option value="SUBSTITUTE">SUBSTITUTE（文字列の置換）</option>
+                <option value="INDEX">INDEX（リストから指定位置の要素を取得）</option>
+                <option value="LOWER_UPPER">LOWER / UPPER（大文字・小文字変換）</option>
+              </optgroup>
+              <optgroup label="日付・時刻 (Date & Time)">
+                <option value="TODAY_NOW">TODAY / NOW / TIMENOW（現在日時・時刻）</option>
+                <option value="DATE_CONSTRUCT">DATE / TIME / DATETIME（日時オブジェクト作成）</option>
+                <option value="WORKDAY">WORKDAY（営業日・稼働日計算）</option>
+                <option value="EOMONTH">EOMONTH（月末日の算出）</option>
+              </optgroup>
+              <optgroup label="ユーザー・環境 (User & Context)">
+                <option value="USER_INFO">USEREMAIL / USERNAME / USERROLE（ログイン情報）</option>
+                <option value="CONTEXT">CONTEXT("View") / CONTEXT("AppName")（画面情報）</option>
+                <option value="HERE">HERE（現在地のGPS座標取得）</option>
+                <option value="LATLONG">LATLONG（緯度経度からLatLong値の構築）</option>
+                <option value="LAT">LAT（LatLong値から緯度を抽出）</option>
+                <option value="LONG">LONG（LatLong値から経度を抽出）</option>
+              </optgroup>
+              <optgroup label="数学・数値 (Math & Numbers)">
+                <option value="ROUND">ROUND / CEILING / FLOOR（端数処理・切り上げ切り捨て）</option>
+                <option value="ABS">ABS（絶対値の計算）</option>
+                <option value="RANDBETWEEN">RANDBETWEEN（指定範囲のランダム整数の生成）</option>
+                <option value="MOD">MOD（割り算の余りを算出）</option>
+                <option value="POWER">POWER（べき乗・累乗の計算）</option>
+              </optgroup>
+              <optgroup label="画面遷移・リンク (Navigation & Links)">
+                <option value="LINKTOVIEW">LINKTOVIEW（指定ビューへ遷移）</option>
+                <option value="LINKTOROW">LINKTOROW（特定レコードのビューへ遷移）</option>
+                <option value="LINKTOFORM">LINKTOFORM（初期値付きフォームへ遷移）</option>
+                <option value="LINKTOFILTEREDVIEW">LINKTOFILTEREDVIEW（条件絞り込みビューへ遷移）</option>
+              </optgroup>
+              <optgroup label="テキスト・その他 (Text & Others)">
+                <option value="OCRTEXT">OCRTEXT（画像から文字を自動抽出）</option>
+              </optgroup>
+              <optgroup label="高度な合成関数 (Advanced Composition)">
+                <option value="COMPOSITE_IF_SUM">条件付き集計のしきい値判定 (IF + SUM + SELECT)</option>
+                <option value="COMPOSITE_ISBLANK_FILTER">重複登録防止バリデーション (ISBLANK + FILTER)</option>
+                <option value="COMPOSITE_INDEX_SPLIT">リスト要素の抽出 (INDEX + SPLIT)</option>
+                <option value="COMPOSITE_IN_SELECT">権限・存在判定 (IN + SELECT)</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+
+        <!-- Dynamic Inputs Area -->
+        <div id="dynamic-inputs" class="bg-slate-950/40 rounded-xl p-4 border border-slate-800/80 space-y-4">
+          <!-- Dynamic form injected by JS -->
+        </div>
+      </div>
+
+      <!-- Step 3: Expression Output & Explanation Card -->
+      <div class="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm space-y-4">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+          <div class="flex items-center gap-2">
+            <div class="p-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg">
+              <i data-lucide="code-2" class="w-4 h-4"></i>
+            </div>
+            <h2 class="font-semibold text-xs text-slate-200 tracking-wide uppercase">3. 生成された AppSheet 式</h2>
+          </div>
+          <button type="button" id="btn-copy" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-medium text-xs rounded-xl shadow-lg shadow-blue-600/25 flex items-center gap-2 transition cursor-pointer">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            クリップボードにコピー
+          </button>
+        </div>
+
+        <!-- Output Code Display -->
+        <div class="relative group">
+          <pre class="bg-slate-950 border border-slate-800/80 rounded-xl p-4 overflow-x-auto text-emerald-400 font-mono text-xs sm:text-sm leading-relaxed min-h-[70px] flex items-center shadow-inner"><code id="code-output" class="w-full break-all">-- 生成中 --</code></pre>
+        </div>
+
+        <!-- Explanation Panel -->
+        <div class="space-y-3 pt-1">
+            <!-- 公式ドキュメントリンク -->
+            <div class="flex items-center justify-between bg-slate-950/50 border border-slate-800/80 rounded-xl px-4 py-2.5">
+                <span class="text-xs text-slate-400 whitespace-nowrap">公式ドキュメントで詳細を確認:</span>
+                <a id="link-official-help" href="https://support.google.com/appsheet/table/10104782?hl=ja" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 hover:text-blue-300 text-xs rounded-lg border border-blue-500/20 transition flex items-center gap-1.5 shrink-0">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                    <span>Google公式ヘルプを開く</span>
+                </a>
+            </div>
+
+            <!-- 解説パネルとワンポイント（横並びグリッド） -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <!-- 動作解説 -->
+                <div class="bg-slate-950/40 border border-slate-800/80 rounded-xl p-3.5 flex flex-col">
+                  <h3 class="text-xs font-semibold text-slate-300 flex items-center gap-1.5 mb-2">
+                    <i data-lucide="book-open" class="w-3.5 h-3.5 text-blue-400"></i> 式の動作解説
+                  </h3>
+                 <div id="text-explanation" class="text-xs text-slate-400 leading-relaxed space-y-1.5">
+                  選択したパターンとパラメータに基づいて説明が表示されます。
+                </div>
+                </div>
+
+                <!-- ワンポイントアドバイス -->
+                <div class="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3.5 flex flex-col">
+                  <h3 class="text-xs font-semibold text-amber-400 flex items-center gap-1.5 mb-2">
+                    <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-400"></i> AppSheet開発のワンポイント
+                  </h3>
+                  <p id="text-advice" class="text-xs text-amber-200/80 leading-relaxed">
+                    AppSheetでの実装における注意点やパフォーマンス上のヒントが表示されます。
+                  </p>
+                </div>
+            </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Import Modal -->
+  <div id="import-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-all duration-200">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-semibold text-slate-100 flex items-center gap-2 text-sm">
+          <i data-lucide="file-spreadsheet" class="w-4 h-4 text-blue-400"></i>
+          複数スキーマ一括インポート
+        </h3>
+        <button type="button" id="btn-close-modal" class="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer transition">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Drag & Drop / File Select -->
+      <div id="drop-zone" class="border-2 border-dashed border-slate-700/80 hover:border-blue-500 rounded-xl p-5 text-center bg-slate-950/50 cursor-pointer transition">
+        <i data-lucide="upload-cloud" class="w-7 h-7 text-blue-400 mx-auto mb-2 opacity-90"></i>
+        <p class="text-xs text-slate-300 font-medium mb-1">CSVまたはTSVファイルをドラッグ＆ドロップ</p>
+        <p class="text-[11px] text-slate-500 mb-3">（1レコード＝1スキーマ、複数行の一括取り込みに対応）</p>
+        <input type="file" id="file-input" accept=".csv,.tsv,.txt" class="hidden">
+        <button type="button" onclick="document.getElementById('file-input').click()" class="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl border border-slate-700 transition cursor-pointer">
+          ファイルを選択
+        </button>
+      </div>
+
+      <div class="relative flex py-1 items-center">
+        <div class="flex-grow border-t border-slate-800"></div>
+        <span class="flex-shrink mx-3 text-[11px] text-slate-500">または スプレッドシート行の貼り付け</span>
+        <div class="flex-grow border-t border-slate-800"></div>
+      </div>
+
+      <!-- Paste Text Area -->
+      <div class="space-y-1.5">
+        <label class="text-xs text-slate-400 block">草案シートから複数行のデータをそのまま貼り付け（A列が先頭項目になります）</label>
+        <textarea id="modal-paste-text" rows="5" placeholder="例:&#10;ID注文	ID顧客	金額	注文日	ステータス&#10;ID顧客	顧客名	メールアドレス	会員ランク" 
+          class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 font-mono focus:outline-none focus:border-blue-500 placeholder:text-slate-600 resize-none"></textarea>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+        <button type="button" id="btn-cancel-modal" class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white rounded-xl transition cursor-pointer">
+          キャンセル
+        </button>
+        <button type="button" id="btn-submit-import" class="px-4 py-2 text-xs font-medium bg-blue-600 hover:bg-blue-500 text-white rounded-xl shadow-lg shadow-blue-600/20 transition flex items-center gap-1.5 cursor-pointer">
+          <i data-lucide="check" class="w-3.5 h-3.5"></i> 一括インポート実行
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-emerald-600 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-2.5 translate-y-20 opacity-0 transition-all duration-300 z-50 pointer-events-none ring-1 ring-white/10">
+    <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+    <span id="toast-message" class="text-xs font-medium">クリップボードにコピーしました！</span>
+  </div>
+
+  <!-- 使い方モーダルウィンドウ -->
+  <div id="help-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col m-4 text-slate-200">
+          
+          <div class="flex items-center justify-between px-6 py-4 border-b border-slate-800 shrink-0">
+              <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                  <i data-lucide="book-open" class="text-blue-400 w-4 h-4"></i>
+                  AppSheet Expression Builder の使い方
+              </h3>
+              <button type="button" onclick="closeHelpModal()" class="text-slate-400 hover:text-slate-200 p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer">
+                  <i data-lucide="x" class="w-4 h-4"></i>
+              </button>
+          </div>
+  
+          <div class="flex px-6 pt-3 border-b border-slate-800 gap-2 shrink-0 bg-slate-950/40">
+              <button type="button" onclick="switchHelpTab('steps')" id="tab-btn-steps" class="px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5">
+                  <i data-lucide="list-ordered" class="w-3.5 h-3.5"></i> 基本の使い方
+              </button>
+              <button type="button" onclick="switchHelpTab('ui')" id="tab-btn-ui" class="px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5">
+                  <i data-lucide="layout" class="w-3.5 h-3.5"></i> UI/UX・便利機能
+              </button>
+          </div>
+          
+          <div class="p-6 overflow-y-auto space-y-4 text-xs text-slate-300 flex-1">
+              
+              <!-- タブ1: 基本の使い方 -->
+              <div id="help-content-steps" class="space-y-3">
+                  <div class="flex gap-3 items-start bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/80">
+                      <div class="w-6 h-6 rounded-lg bg-blue-600/20 text-blue-400 font-bold flex items-center justify-center shrink-0">1</div>
+                      <div>
+                          <h4 class="font-semibold text-slate-200 mb-1">スキーマ（テーブル構造）の準備</h4>
+                          <p class="text-slate-400 leading-relaxed">「顧客マスタ」「売上履歴」「商品マスタ」などのワンタッププリセットを追加するか、CSV・スプレッドシートの行データを貼り付けてアプリのテーブル構造を定義します。</p>
+                      </div>
+                  </div>
+  
+                  <div class="flex gap-3 items-start bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/80">
+                      <div class="w-6 h-6 rounded-lg bg-blue-600/20 text-blue-400 font-bold flex items-center justify-center shrink-0">2</div>
+                      <div>
+                          <h4 class="font-semibold text-slate-200 mb-1">生成したい処理（関数）の選択</h4>
+                          <p class="text-slate-400 leading-relaxed">検索機能やカテゴリから目的の関数（SELECT、LOOKUP、IFS、高度な合成関数など）を選択し、対象となるテーブルやカラムを指定します。</p>
+                      </div>
+                  </div>
+  
+                  <div class="flex gap-3 items-start bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/80">
+                      <div class="w-6 h-6 rounded-lg bg-blue-600/20 text-blue-400 font-bold flex items-center justify-center shrink-0">3</div>
+                      <div>
+                          <h4 class="font-semibold text-slate-200 mb-1">式をコピーして AppSheet へ適用</h4>
+                          <p class="text-slate-400 leading-relaxed">リアルタイムに自動生成された AppSheet 式を確認し、「クリップボードにコピー」ボタンを押して AppSheet エディタに貼り付けて活用します。</p>
+                      </div>
+                  </div>
+              </div>
+  
+              <!-- タブ2: UI/UX・便利機能 -->
+              <div id="help-content-ui" class="space-y-3 hidden">
+                  <div class="flex gap-3 items-start bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/80">
+                      <div class="w-6 h-6 rounded-lg bg-blue-600/20 text-blue-400 font-bold flex items-center justify-center shrink-0">
+                          <i data-lucide="layout-template" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <div>
+                          <h4 class="font-semibold text-slate-200 mb-1">2ペイン構成のスマートレイアウト</h4>
+                          <p class="text-slate-400 leading-relaxed">画面は「左：スキーマ」「右：生成・出力」の2カラム構成です。左側でテーブルを定義すると、右側の関数設定や列挿入プルダウンへリアルタイムに連動します。</p>
+                      </div>
+                  </div>
+  
+                  <div class="flex gap-3 items-start bg-slate-950/50 p-3.5 rounded-xl border border-slate-800/80">
+                      <div class="w-6 h-6 rounded-lg bg-blue-600/20 text-blue-400 font-bold flex items-center justify-center shrink-0">
+                          <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                      </div>
+                      <div>
+                          <h4 class="font-semibold text-slate-200 mb-1">関数検索・フィルタ機能</h4>
+                          <p class="text-slate-400 leading-relaxed">「関数の検索・フィルタ」入力欄にキーワード（例: CONCATENATE, DATEなど）を入力すると、対応する生成パターンを瞬時に絞り込むことができます。</p>
+                      </div>
+                  </div>
+              </div>
+  
+          </div>
+  
+          <div class="px-6 py-4 border-t border-slate-800 flex justify-end shrink-0 bg-slate-900">
+              <button type="button" onclick="closeHelpModal()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-xl transition cursor-pointer">
+                  閉じる
+              </button>
+          </div>
+      </div>
+  </div>
+
+  <!-- 外部JavaScriptの読み込み -->
+  <script src="app.js"></script>
+</body>
+</html>
