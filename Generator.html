@@ -1847,8 +1847,9 @@
         descText = 'リスト（' + listExpr + '）の中から重複する要素を除外した一意なリストを生成します。';
         advice = '重複のない選択肢リストをフォームに提示したい場合に便利です。';
       }
-      else if (category === 'AGGREGATE') {
-        const func = document.getElementById('agg-func')?.value || 'SUM';
+      // 個別選択された集計関数 (SUM, COUNT, AVERAGE, MAX, MIN)
+      else if (['SUM', 'COUNT', 'AVERAGE', 'MAX', 'MIN'].includes(category)) {
+        const func = category;
         const tIdx = document.getElementById('agg-target-table')?.value;
         const targetTable = schema[tIdx];
         const targetCol = document.getElementById('agg-target-col')?.value || 'Amount';
@@ -1860,6 +1861,18 @@
           syntaxText = '構文: ' + func + '(SELECT(...))';
           descText = '「' + targetTable.name + '」から [' + condCol + '] が一致する行を抽出し、その [' + targetCol + '] の' + getFuncJPName(func) + 'を算出します。';
           advice = '合計や件数を求める定型パターンです。親テーブル側の Virtual Column に設定することで集計値を自動保持できます。';
+        }
+      }
+      else if (category === 'MAXROW' || category === 'MINROW') {
+        const tIdx = document.getElementById('maxrow-target-table')?.value;
+        const targetTable = schema[tIdx];
+        const targetCol = document.getElementById('maxrow-target-col')?.value || 'Amount';
+
+        if (targetTable) {
+          expression = category + '("' + targetTable.name + '", [' + targetCol + '])';
+          syntaxText = '構文: ' + category + '(table-name, column-name)';
+          descText = '「' + targetTable.name + '」テーブルの中で、[' + targetCol + '] が' + (category === 'MAXROW' ? '最大' : '最小') + 'となるレコードの行キー（ID）を1件返します。';
+          advice = '取得したレコードのキーを使って、De-reference構造（[' + category + '列].[取得項目]）と組み合わせることで、最高額の注文日や最新のステータスなどを直接参照できます。';
         }
       }
       else if (category === 'STDEVP') {
@@ -1939,18 +1952,6 @@
             descText = '「' + targetTable.name + '」テーブル内に、一致するレコードが1件以上存在するか（TRUE/FALSE）を判定します。';
             advice = '[Show_If] や [Editable_If] などの表示・編集制御ロジックに利用できます。';
           }
-        }
-      }
-      else if (category === 'MAXROW' || category === 'MINROW') {
-        const tIdx = document.getElementById('maxrow-target-table')?.value;
-        const targetTable = schema[tIdx];
-        const targetCol = document.getElementById('maxrow-target-col')?.value || 'Amount';
-  
-        if (targetTable) {
-          expression = category + '("' + targetTable.name + '", [' + targetCol + '])';
-          syntaxText = '構文: ' + category + '(table-name, column-name)';
-          descText = '「' + targetTable.name + '」テーブルの中で、[' + targetCol + '] が' + (category === 'MAXROW' ? '最大' : '最小') + 'となるレコードの行キー（ID）を1件返します。';
-          advice = '取得したレコードのキーを使って、De-reference構造（[' + category + '列].[取得項目]）と組み合わせることで、最高額の注文日や最新のステータスなどを直接参照できます。';
         }
       }
       else if (category === 'ISBLANK') {
