@@ -514,14 +514,14 @@
       updateUndoRedoUI();
     }
 
-    // 実際のセーブ＆UI更新（履歴記録なし版）
+    // 実際のセーブ＆UI更新（内部処理用）
     function saveSchemaWithoutHistory() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(schema));
       statTableCount.textContent = schema.length;
       renderDynamicForm();
     }
 
-    // スキーマ変更を伴う保存（履歴を記録する）
+    // スキーマ変更を伴う保存（必ず履歴を記録してからセーブする）
     function saveSchema() {
       pushHistory();
       saveSchemaWithoutHistory();
@@ -598,7 +598,6 @@
       if (saved) {
         try {
           schema = JSON.parse(saved);
-          // 既存の保存データに isOpen がない場合のフォールバック（デフォルト開く）
           schema.forEach(tbl => {
             if (tbl.isOpen === undefined) tbl.isOpen = true;
           });
@@ -608,6 +607,11 @@
       } else {
         schema = JSON.parse(JSON.stringify(SAMPLE_SCHEMA));
       }
+      
+      // ▼ 追加：初期読み込み時の状態を履歴のベースとして記録
+      historyStack = [JSON.stringify(schema)];
+      redoStack = [];
+      updateUndoRedoUI();
     }
 
     function saveSchema() {
