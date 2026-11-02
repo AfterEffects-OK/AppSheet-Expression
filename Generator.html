@@ -2209,12 +2209,19 @@
       }
       else if (category === 'LAT' || category === 'LONG') {
         const col = document.getElementById('latlong-target-col')?.value || 'HERE()';
-        // 入力された値が [ ] で囲まれておらず、関数やプレフィックス等でなければ括弧を付与、などの調整
-        const formattedCol = col.startsWith('(') || col.startsWith('[') ? col : '[' + col + ']';
+        
+        // 入力された値が "HERE()" の場合や関数・すでに括弧付きの場合はそのまま、カラム名の場合は [ ] で囲む
+        let formattedCol = col.trim();
+        if (formattedCol.toUpperCase() === 'HERE()') {
+          formattedCol = 'HERE()';
+        } else if (!formattedCol.startsWith('(') && !formattedCol.startsWith('[')) {
+          formattedCol = '[' + formattedCol + ']';
+        }
+
         expression = category + '(' + formattedCol + ')';
         syntaxText = '構文: ' + category + '(lat-long)';
         descText = 'LatLong型の値（' + formattedCol + '）から、' + (category === 'LAT' ? '緯度（Latitude）' : '経度（Longitude）') + 'の数値を抽出します。';
-        advice = '位置情報から特定の座標値だけを取り出して数値計算や別カラムとの比較を行いたい場合に便利です。';
+        advice = (formattedCol === 'HERE()' ? '現在地（HERE()）から直接数値の' + (category === 'LAT' ? '緯度' : '経度') + 'を取得したい場合に最適な記述です。' : '位置情報から特定の座標値だけを取り出して数値計算や別カラムとの比較を行いたい場合に便利です。');
       }
       else if (category === 'ROUND') {
         const func = document.getElementById('round-func')?.value || 'ROUND';
