@@ -1652,6 +1652,29 @@
         `;
         updateGeneratedExpression();
       } 
+      else if (category === 'SUM' || category === 'COUNT' || category === 'AVERAGE' || category === 'MAX' || category === 'MIN') {
+        dynamicInputs.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">対象テーブル</label>
+              <select id="agg-target-table" onchange="onAggTableChange()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${tableOptions}</select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">集計数値カラム</label>
+              <select id="agg-target-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none"></select>
+            </div>
+            <div>
+              <label class="block text-slate-400 mb-1.5 font-medium">絞り込み条件カラム</label>
+              <select id="agg-cond-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none"></select>
+            </div>
+            <div class="sm:col-span-3">
+              <label class="block text-slate-400 mb-1.5 font-medium">一致させる自行のカラム</label>
+              <select id="agg-thisrow-col" onchange="updateGeneratedExpression()" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2.5 text-slate-200 focus:outline-none">${getAllColumnsFlatOptions()}</select>
+            </div>
+          </div>
+        `;
+        onAggTableChange();
+      }
       else if (category === 'COMPOSITE_IF_SUM') {
           dynamicInputs.innerHTML = `
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
