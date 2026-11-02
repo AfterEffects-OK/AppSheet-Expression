@@ -592,7 +592,7 @@
       lucide.createIcons();
     });
 
-    function loadSchema() {
+   function loadSchema() {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         try {
@@ -607,16 +607,22 @@
         schema = JSON.parse(JSON.stringify(SAMPLE_SCHEMA));
       }
 
-      // ▼ 修正：loadSchemaの「最後に」初期状態を履歴のベースとして記録する
+      // 履歴スタックの初期化
       historyStack = [JSON.stringify(schema)];
       redoStack = [];
       updateUndoRedoUI();
     }
 
-    function saveSchema() {
+    // ▼ ここを必ず「pushHistory() を呼ぶ形」に修正します
+    function saveSchemaWithoutHistory() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(schema));
-      statTableCount.textContent = schema.length;
+      if (statTableCount) statTableCount.textContent = schema.length;
       renderDynamicForm();
+    }
+
+    function saveSchema() {
+      pushHistory();
+      saveSchemaWithoutHistory();
     }
 
     function initEvents() {
