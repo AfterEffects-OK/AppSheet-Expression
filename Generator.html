@@ -2745,15 +2745,15 @@
         });
     }
     
-    // READMEを確実に表示する関数（マークダウン失敗時はテキスト表示にフォールバック）
+    // READMEを非同期で取得し、失敗した場合はハードコードした内容を表示する関数
     let readmeLoaded = false;
     async function loadReadmeOnce() {
         if (readmeLoaded) return;
         const container = document.getElementById('readme-container');
         if (!container) return;
 
-        // READMEの全文データ
-        const readmeMarkdown = `# AppSheet Expression Builder
+        // 【フォールバック用】読み込みに失敗した場合に表示するハードコードされたREADME全文
+        const fallbackMarkdown = `# AppSheet Expression Builder
 
 テーブル構造（スキーマ）をもとに、AppSheet の各種関数・数式構文をワンクリックで自動生成・解説するプロフェッショナルな開発者向け Web ツールです。
 
@@ -2793,7 +2793,7 @@ AppSheet アプリ開発における複雑な関数や数式（\`LOOKUP\`, \`SEL
 ## 使い方 (How to Use)
 
 1. [AppSheet Expression Builder (GitHub Pages)](https://aftereffects-ok.github.io/AppSheet-Expression/Generator.html) にアクセスします。
-2. **「1. スキーマ（テーブル構造）」** からテーブルを追加するか、「サンプル読み込み」または“一括インポート”でテーブル定義を読み込みます。
+2. **「1. スキーマ（テーブル構造）」** からテーブルを追加するか、「サンプル読み込み」または「一括インポート」でテーブル定義を読み込みます。
 3. **「2. 生成したい処理の設定」** で目的の関数カテゴリ（生成パターン）を選択し、必要に応じてパラメータや対象カラムを指定します。
 4. **「3. 生成された AppSheet 式」** にリアルタイムで出力された式を「クリップボードにコピー」して、AppSheetエディタに貼り付けて使用します。
 
@@ -2812,24 +2812,30 @@ AppSheet アプリ開発における複雑な関数や数式（\`LOOKUP\`, \`SEL
 
 This project is open-source under the [MIT License](LICENSE).`;
 
+        let markdownToRender = '';
+
         try {
-            // まず marked.js によるパースを試みる
-            if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
-                const htmlContent = marked.parse(readmeMarkdown);
-                container.innerHTML = '<div class="prose prose-invert max-w-none text-slate-300">' + htmlContent + '</div>';
-            } else {
-                throw new Error('marked is not available');
-            }
-        } catch (e) {
-            // 万が一マークダウン変換に失敗した場合は、エスケープした上で改行を保持したテキストとして表示する
-            const safeText = readmeMarkdown
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-            container.innerHTML = '<div class="whitespace-pre-wrap font-sans text-slate-300 text-xs">' + safeText + '</div>';
+            // まず実際の README.md ファイルの取得を試みる
+            const response = await fetch('./README.md');
+            if (!response.ok) throw new Error('README.mdの取得に失敗しました');
+            markdownToRender = await response.text();
+        } catch (error) {
+            // 失敗した場合はハードコードしたフォールバック用テキストを使用
+            console.warn('外部の README.md 取得に失敗したため、ハードコードされたテキストを表示します:', error);
+            markdownToRender = fallbackMarkdown;
         }
-        
-        readmeLoaded = true;
+
+        try {
+            // marked.js を使ってマークダウンをHTMLに変換して流し込む
+            if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+                container.innerHTML = '<div class="prose prose-invert max-w-none text-slate-300">' + marked.parse(markdownToRender) + '</div>';
+            } else {
+                container.innerHTML = '<div class="whitespace-pre-wrap font-sans text-slate-300 text-xs">' + markdownToRender + '</div>';
+            }
+            readmeLoaded = true;
+        } catch (e) {
+            container.innerHTML = '<p class="text-rose-400 text-xs">READMEの描画に失敗しました。</p>';
+        }
     }
   </script>
   
