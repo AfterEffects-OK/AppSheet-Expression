@@ -2752,9 +2752,8 @@
         const container = document.getElementById('readme-container');
         if (!container) return;
 
-        // ご提示いただいたREADMEの全文
-        const readmeMarkdown = `
-# AppSheet Expression Builder
+        // ご提示いただいたREADMEの全文を安全なエスケープなしの文字列として保持
+        const readmeMarkdown = `# AppSheet Expression Builder
 
 テーブル構造（スキーマ）をもとに、AppSheet の各種関数・数式構文をワンクリックで自動生成・解説するプロフェッショナルな開発者向け Web ツールです。
 
@@ -2811,15 +2810,15 @@ AppSheet アプリ開発における複雑な関数や数式（\`LOOKUP\`, \`SEL
 
 ## ライセンス (License)
 
-This project is open-source under the [MIT License](LICENSE).
-        `;
+This project is open-source under the [MIT License](LICENSE).`;
 
         try {
-            // marked.js を使ってマークダウンを綺麗なHTMLに変換して流し込む
-            container.innerHTML = `<div class="prose prose-invert max-w-none text-slate-300">${marked.parse(readmeMarkdown)}</div>`;
+            // marked.js を使ってHTMLに変換し、安全にコンテナへ代入
+            const htmlContent = marked.parse(readmeMarkdown);
+            container.innerHTML = '<div class="prose prose-invert max-w-none text-slate-300">' + htmlContent + '</div>';
             readmeLoaded = true;
         } catch (e) {
-            container.innerHTML = `<p class="text-rose-400 text-xs">READMEの描画に失敗しました。</p>`;
+            container.innerHTML = '<p class="text-rose-400 text-xs">READMEの描画に失敗しました。</p>';
         }
     }
   </script>
