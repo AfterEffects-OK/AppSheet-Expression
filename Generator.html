@@ -2745,14 +2745,14 @@
         });
     }
     
-    // READMEを確実に表示するための修正版関数
+    // READMEを確実に表示する関数（マークダウン失敗時はテキスト表示にフォールバック）
     let readmeLoaded = false;
     async function loadReadmeOnce() {
         if (readmeLoaded) return;
         const container = document.getElementById('readme-container');
         if (!container) return;
 
-        // ご提示いただいたREADMEの全文を安全なエスケープなしの文字列として保持
+        // READMEの全文データ
         const readmeMarkdown = `# AppSheet Expression Builder
 
 テーブル構造（スキーマ）をもとに、AppSheet の各種関数・数式構文をワンクリックで自動生成・解説するプロフェッショナルな開発者向け Web ツールです。
@@ -2793,7 +2793,7 @@ AppSheet アプリ開発における複雑な関数や数式（\`LOOKUP\`, \`SEL
 ## 使い方 (How to Use)
 
 1. [AppSheet Expression Builder (GitHub Pages)](https://aftereffects-ok.github.io/AppSheet-Expression/Generator.html) にアクセスします。
-2. **「1. スキーマ（テーブル構造）」** からテーブルを追加するか、「サンプル読み込み」または「一括インポート」でテーブル定義を読み込みます。
+2. **「1. スキーマ（テーブル構造）」** からテーブルを追加するか、「サンプル読み込み」または“一括インポート”でテーブル定義を読み込みます。
 3. **「2. 生成したい処理の設定」** で目的の関数カテゴリ（生成パターン）を選択し、必要に応じてパラメータや対象カラムを指定します。
 4. **「3. 生成された AppSheet 式」** にリアルタイムで出力された式を「クリップボードにコピー」して、AppSheetエディタに貼り付けて使用します。
 
@@ -2813,13 +2813,23 @@ AppSheet アプリ開発における複雑な関数や数式（\`LOOKUP\`, \`SEL
 This project is open-source under the [MIT License](LICENSE).`;
 
         try {
-            // marked.js を使ってHTMLに変換し、安全にコンテナへ代入
-            const htmlContent = marked.parse(readmeMarkdown);
-            container.innerHTML = '<div class="prose prose-invert max-w-none text-slate-300">' + htmlContent + '</div>';
-            readmeLoaded = true;
+            // まず marked.js によるパースを試みる
+            if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+                const htmlContent = marked.parse(readmeMarkdown);
+                container.innerHTML = '<div class="prose prose-invert max-w-none text-slate-300">' + htmlContent + '</div>';
+            } else {
+                throw new Error('marked is not available');
+            }
         } catch (e) {
-            container.innerHTML = '<p class="text-rose-400 text-xs">READMEの描画に失敗しました。</p>';
+            // 万が一マークダウン変換に失敗した場合は、エスケープした上で改行を保持したテキストとして表示する
+            const safeText = readmeMarkdown
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            container.innerHTML = '<div class="whitespace-pre-wrap font-sans text-slate-300 text-xs">' + safeText + '</div>';
         }
+        
+        readmeLoaded = true;
     }
   </script>
   
