@@ -2837,6 +2837,51 @@ This project is open-source under the [MIT License](LICENSE).`;
             container.innerHTML = '<p class="text-rose-400 text-xs">READMEの描画に失敗しました。</p>';
         }
     }
+
+    // AppSheet式を解析して、対応する生成パターンと入力項目を自動設定する関数
+    function parseAndApplyExpression(expr) {
+        if (!expr) return;
+        expr = expr.trim();
+        
+        let matchedCategory = '';
+        
+        // 式の先頭部分や特徴から関数を判定する正規表現マッチング
+        if (/^LOOKUP\s*\(/i.test(expr)) {
+            matchedCategory = 'LOOKUP';
+        } else if (/^SELECT\s*\(/i.test(expr)) {
+            matchedCategory = 'SELECT';
+        } else if (/^FILTER\s*\(/i.test(expr)) {
+            matchedCategory = 'FILTER';
+        } else if (/^SUM\s*\(/i.test(expr)) {
+            matchedCategory = 'SUM';
+        } else if (/^COUNT\s*\(/i.test(expr)) {
+            matchedCategory = 'COUNT';
+        } else if (/^IFS\s*\(/i.test(expr)) {
+            matchedCategory = 'IFS';
+        } else if (/^SWITCH\s*\(/i.test(expr)) {
+            matchedCategory = 'SWITCH';
+        } else if (/^IF\s*\(/i.test(expr)) {
+            matchedCategory = 'IF';
+        } else if (/^CONCATENATE\s*\(/i.test(expr)) {
+            matchedCategory = 'CONCATENATE';
+        } else if (/^REF_ROWS\s*\(/i.test(expr)) {
+            matchedCategory = 'REF_ROWS';
+        }
+        // 必要に応じて他の関数も追加可能
+
+        if (matchedCategory) {
+            // セレクトボックスの選択肢を一致させる
+            const selectCat = document.getElementById('select-category');
+            if (selectCat) {
+                selectCat.value = matchedCategory;
+                // 動的フォームを再描画して対応する入力欄を展開
+                renderDynamicForm();
+                showToast(`「${matchedCategory}」の入力フォームに切り替えました！`);
+            }
+        } else {
+            showToast('対応する関数パターンを自動判定できませんでした');
+        }
+    }
   </script>
   
   <!-- 使い方モーダルウィンドウ -->
