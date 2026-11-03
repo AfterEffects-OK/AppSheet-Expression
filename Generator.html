@@ -2745,22 +2745,30 @@
         });
     }
     
-    // READMEを非同期で取得してMarkdownとして表示する関数
+    // READMEを確実に表示させるための修正版関数
     let readmeLoaded = false;
     async function loadReadmeOnce() {
         if (readmeLoaded) return;
         const container = document.getElementById('readme-container');
+        
+        // ネットワーク経由ではなく、リポジトリの README.md の中身をここに直接保持します
+        const markdownText = `
+# AppSheet Expression Builder
+
+テーブル構造からAppSheetの全関数構文を自動生成・解説する開発支援ツールです。
+
+## 主な機能
+- **スキーマ管理**: テーブル構造を自由に追加・編集し、ローカルストレージに保存できます。
+- **式生成**: LOOKUP、SELECT、SUM、COUNTなどのAppSheet公式関数構文を自動生成します。
+- **一括インポート**: スプレッドシートやExcelの列データをそのまま貼り付けて一括取り込みできます。
+        `;
+
         try {
-            const res = await fetch('https://raw.githubusercontent.com/AfterEffects-OK/AppSheet-Expression/main/README.md');
-            if (!res.ok) throw new Error('取得失敗');
-            const text = await res.text();
-            
-            // marked.js を使ってマークダウンをHTMLに変換して流し込む
-            // ※あらかじめHTMLの <head> 内に marked.js の読み込みが必要です
-            container.innerHTML = `<div class="prose prose-invert max-w-none text-slate-300">${marked.parse(text)}</div>`;
+            // marked.js を使ってマークダウンを綺麗なHTMLに変換
+            container.innerHTML = `<div class="prose prose-invert max-w-none text-slate-300">${marked.parse(markdownText)}</div>`;
             readmeLoaded = true;
         } catch (e) {
-            container.innerHTML = `<p class="text-rose-400 text-xs">README.md の読み込みに失敗しました。</p>`;
+            container.innerHTML = `<p class="text-rose-400 text-xs">READMEの描画に失敗しました。</p>`;
         }
     }
   </script>
