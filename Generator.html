@@ -2754,12 +2754,16 @@
               </button>
           </div>
   
+          <!-- タブヘッダー（READMEタブを追加） -->
           <div class="flex px-6 pt-3 border-b border-slate-800 gap-2 shrink-0 bg-slate-950/40">
               <button type="button" onclick="switchHelpTab('steps')" id="tab-btn-steps" class="px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5">
                   <i data-lucide="list-ordered" class="w-3.5 h-3.5"></i> 基本の使い方
               </button>
               <button type="button" onclick="switchHelpTab('ui')" id="tab-btn-ui" class="px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5">
                   <i data-lucide="layout" class="w-3.5 h-3.5"></i> UI/UX・便利機能
+              </button>
+              <button type="button" onclick="switchHelpTab('readme')" id="tab-btn-readme" class="px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5">
+                  <i data-lucide="file-text" class="w-3.5 h-3.5"></i> README
               </button>
           </div>
           
@@ -2812,6 +2816,13 @@
                           <h4 class="font-semibold text-slate-200 mb-1">関数検索・フィルタ機能</h4>
                           <p class="text-slate-400 leading-relaxed">「関数の検索・フィルタ」入力欄にキーワード（例: CONCATENATE, DATEなど）を入力すると、対応する生成パターンを瞬時に絞り込むことができます。</p>
                       </div>
+                  </div>
+              </div>
+  
+              <!-- タブ3: README.md 表示用 -->
+              <div id="help-content-readme" class="space-y-3 hidden">
+                  <div id="readme-container" class="bg-slate-950/50 p-4 rounded-xl border border-slate-800/80 leading-relaxed text-slate-300">
+                      <p class="text-slate-400 animate-pulse">README.md を読み込んでいます...</p>
                   </div>
               </div>
   
