@@ -317,7 +317,8 @@
 
         <!-- Output Code Display -->
         <div class="relative group">
-          <pre class="bg-slate-950 border border-slate-800/80 rounded-xl p-4 overflow-x-auto text-emerald-400 font-mono text-xs sm:text-sm leading-relaxed min-h-[70px] flex items-center shadow-inner"><code id="code-output" class="w-full break-all">-- 生成中 --</code></pre>
+          <textarea id="code-output" rows="2" placeholder="ここにAppSheet式を直接入力・貼り付けすると、上の設定フォームが自動で切り替わります" 
+            class="w-full bg-slate-950 border border-slate-800/80 rounded-xl p-4 text-emerald-400 font-mono text-xs sm:text-sm leading-relaxed focus:outline-none focus:border-blue-500 shadow-inner resize-y"></textarea>
         </div>
 
         <!-- Explanation Panel -->
@@ -2881,6 +2882,14 @@ This project is open-source under the [MIT License](LICENSE).`;
         } else {
             showToast('対応する関数パターンを自動判定できませんでした');
         }
+    }
+    
+    // Step 3のテキストエリアが編集されたときに逆引きパースを実行
+    const codeOutputEl = document.getElementById('code-output');
+    if (codeOutputEl) {
+        codeOutputEl.addEventListener('input', (e) => {
+            parseAndApplyExpression(e.target.value);
+        });
     }
   </script>
   
