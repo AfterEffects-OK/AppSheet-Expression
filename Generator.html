@@ -2719,25 +2719,52 @@
       }
     });
 
-    window.switchHelpTab = (tabName) => {
-      const btnSteps = document.getElementById('tab-btn-steps');
-      const btnUi = document.getElementById('tab-btn-ui');
-      const contentSteps = document.getElementById('help-content-steps');
-      const contentUi = document.getElementById('help-content-ui');
+    function switchHelpTab(tab) {
+        const tabs = ['steps', 'ui', 'readme'];
+        
+        tabs.forEach(t => {
+            const btn = document.getElementById(`tab-btn-${t}`);
+            const content = document.getElementById(`help-content-${t}`);
+            
+            if (t === tab) {
+                // アクティブなタブのスタイル
+                btn.className = "px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5";
+                content.classList.remove('hidden');
+                
+                // READMEタブが開かれたときに自動でコンテンツを読み込む処理（初回のみ）
+                if (t === 'readme') {
+                    loadReadmeOnce();
+                }
+            } else {
+                // 非アクティブなタブのスタイル
+                btn.className = "px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5";
+                content.classList.add('hidden');
+            }
+        });
+    }
     
-      if (tabName === 'steps') {
-        if (btnSteps) btnSteps.className = 'px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5';
-        if (btnUi) btnUi.className = 'px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5';
-        if (contentSteps) contentSteps.classList.remove('hidden');
-        if (contentUi) contentUi.classList.add('hidden');
-      } else {
-        if (btnUi) btnUi.className = 'px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5';
-        if (btnSteps) btnSteps.className = 'px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5';
-        if (contentUi) contentUi.classList.remove('hidden');
-        if (contentSteps) contentSteps.classList.add('hidden');
-      }
-      if (typeof lucide !== 'undefined') lucide.createIcons();
-    };
+    // READMEを非同期で取得して表示する関数の一例
+    let readmeLoaded = false;
+    async function loadReadmeOnce() {
+        if (readmeLoaded) return;
+        const container = document.getElementById('readme-container');
+        try {
+            const res = await fetch('https://raw.githubusercontent.com/AfterEffects-OK/AppSheet-Expression/main/README.md');
+            if (!res.ok) throw new Error('取得失敗');
+            const text = await res.text();
+            
+            // 簡易的にプレーンテキストまたはマークダウンとして流し込む
+            // （もし marked.js 等を導入している場合は marked.parse(text) に置き換え可能）
+            container.innerHTML = `<div class="whitespace-pre-wrap font-sans">${escapeHtml(text)}</div>`;
+            readmeLoaded = true;
+        } catch (e) {
+            container.innerHTML = `<p class="text-red-400">README.md の読み込みに失敗しました。</p>`;
+        }
+    }
+    
+    function escapeHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
   </script>
   
   <!-- 使い方モーダルウィンドウ -->
