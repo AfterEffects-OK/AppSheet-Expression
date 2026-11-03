@@ -8,8 +8,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Marked.js for Markdown Rendering -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.js"></script>
   <!-- Google Fonts: Inter & Fira Code -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
   <script>
@@ -411,16 +409,12 @@
               </button>
           </div>
   
-          <!-- タブヘッダー（READMEタブを追加） -->
           <div class="flex px-6 pt-3 border-b border-slate-800 gap-2 shrink-0 bg-slate-950/40">
               <button type="button" onclick="switchHelpTab('steps')" id="tab-btn-steps" class="px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5">
                   <i data-lucide="list-ordered" class="w-3.5 h-3.5"></i> 基本の使い方
               </button>
               <button type="button" onclick="switchHelpTab('ui')" id="tab-btn-ui" class="px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5">
                   <i data-lucide="layout" class="w-3.5 h-3.5"></i> UI/UX・便利機能
-              </button>
-              <button type="button" onclick="switchHelpTab('readme')" id="tab-btn-readme" class="px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5">
-                  <i data-lucide="file-text" class="w-3.5 h-3.5"></i> README
               </button>
           </div>
           
@@ -476,13 +470,6 @@
                   </div>
               </div>
   
-              <!-- タブ3: README.md 表示用 -->
-              <div id="help-content-readme" class="space-y-3 hidden">
-                  <div id="readme-container" class="bg-slate-950/50 p-4 rounded-xl border border-slate-800/80 leading-relaxed text-slate-300">
-                      <p class="text-slate-400 animate-pulse">README.md を読み込んでいます...</p>
-                  </div>
-              </div>
-  
           </div>
   
           <div class="px-6 py-4 border-t border-slate-800 flex justify-end shrink-0 bg-slate-900">
@@ -492,118 +479,6 @@
           </div>
       </div>
   </div>
-
-  <script>
-    // タブ切り替え関数
-    function switchHelpTab(tab) {
-        const tabs = ['steps', 'ui', 'readme'];
-        
-        tabs.forEach(t => {
-            const btn = document.getElementById(`tab-btn-${t}`);
-            const content = document.getElementById(`help-content-${t}`);
-            if (!btn || !content) return;
-            
-            if (t === tab) {
-                btn.className = "px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5";
-                content.classList.remove('hidden');
-                
-                if (t === 'readme') {
-                    loadReadmeOnce();
-                }
-            } else {
-                btn.className = "px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5";
-                content.classList.add('hidden');
-            }
-        });
-    }
-
-    // README読み込み関数（ファイル取得失敗時はフォールバック表示）
-    let readmeLoaded = false;
-    async function loadReadmeOnce() {
-        if (readmeLoaded) return;
-        const container = document.getElementById('readme-container');
-        if (!container) return;
-
-        const fallbackMarkdown = `# AppSheet Expression Builder
-
-テーブル構造（スキーマ）をもとに、AppSheet の各種関数・数式構文をワンクリックで自動生成・解説するプロフェッショナルな開発者向け Web ツールです。
-
-[![AppSheet Expression Builder](https://img.shields.io/badge/AppSheet-Expression%20Builder-blue?style=flat-square&logo=google-sheets)](https://aftereffects-ok.github.io/AppSheet-Expression/Generator.html)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
-
----
-
-## 概要 (Overview)
-
-AppSheet アプリ開発における複雑な関数や数式（\`LOOKUP\`, \`SELECT\`, \`FILTER\`, \`SUM\`, \`LINKTO...\` など）の記述を強力にサポートします。
-定義したスキーマ（テーブル構造）をもとに、よく使われる定番の関数から高度なネスト・合成関数まで、正確な AppSheet 式を自動生成し、詳細な解説と開発のワンポイントアドバイスを提供します。
-
----
-
-## 主な機能 (Key Features)
-
-### 1. スキーマ（テーブル構造）マネージャー
-- **ワンタッププリセット追加**：「顧客マスタ」「売上履歴」「商品マスタ」などの定番テーブルをワンクリックで追加できます。
-- **一括インポート / サンプル読み込み**：CSV/TSVファイルのドラッグ＆ドロップや、スプレッドシート行の直接貼り付けによる一括スキーマ登録に対応しています。
-- **ローカルストレージ自動同期**：編集中のスキーマ情報はブラウザの \`localStorage\` に自動保存されます。
-
-### 2. 全標準関数・高度な合成関数の網羅
-- **参照・リレーション**: \`LOOKUP\`, \`De-Reference ([Ref列].[項目])\`, \`REF_ROWS\`, \`DOMAINOF\`
-- **リスト・抽出**: \`SELECT\`, \`FILTER\`, \`ORDERBY\`, \`SORT\`, \`TOP\`, \`ANY\`, \`LIST\`, \`SPLIT\`, \`INTERSECT\`, \`UNIQUE\`, \`EXTRACT\`
-- **集計・計算**: \`SUM\`, \`COUNT\`, \`AVERAGE\`, \`MAX\`, \`MIN\`, \`MAXROW\`, \`MINROW\`, \`STDEVP\`, \`MOD\`, \`POWER\`, \`ROUND\`
-- **画面遷移・リンク**: \`LINKTOVIEW\`, \`LINKTOROW\`, \`LINKTOFORM\`, \`LINKTOFILTEREDVIEW\`, \`LINKTOAPP\`, \`HYPERLINK\`
-- **ユーザー・環境・位置情報**: \`HERE\`, \`LATLONG\`, \`LAT\`, \`LONG\`, \`USEREMAIL\`, \`USERNAME\`, \`CONTEXT\`
-- **高度な合成関数**: 条件付き集計、重複登録防止バリデーション、リスト要素抽出など
-
-### 3. スムーズな操作性
-- どの関数パターンや条件式入力欄を選択している時でも、テーブルのカラム名（\`[列名]\`）をワンクリックで簡単に組み込めます。
-- リアルタイムで構文の動作解説と開発のヒントが表示されます。
-
----
-
-## 使い方 (How to Use)
-
-1. [AppSheet Expression Builder (GitHub Pages)](https://aftereffects-ok.github.io/AppSheet-Expression/Generator.html) にアクセスします。
-2. **「1. スキーマ（テーブル構造）」** からテーブルを追加するか、「サンプル読み込み」または「一括インポート」でテーブル定義を読み込みます。
-3. **「2. 生成したい処理の設定」** で目的の関数カテゴリ（生成パターン）を選択し、必要に応じてパラメータや対象カラムを指定します。
-4. **「3. 生成された AppSheet 式」** にリアルタイムで出力された式を「クリップボードにコピー」して、AppSheetエディタに貼り付けて使用します。
-
----
-
-## 技術スタック (Tech Stack)
-
-- HTML5 / JavaScript (Vanilla JS)
-- Tailwind CSS
-- Lucide Icons
-- Google Fonts (Inter / Fira Code)
-
----
-
-## ライセンス (License)
-
-This project is open-source under the [MIT License](LICENSE).`;
-
-        let markdownToRender = '';
-        try {
-            const response = await fetch('./README.md');
-            if (!response.ok) throw new Error('取得失敗');
-            markdownToRender = await response.text();
-        } catch (error) {
-            markdownToRender = fallbackMarkdown;
-        }
-
-        try {
-            if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
-                container.innerHTML = '<div class="prose prose-invert max-w-none text-slate-300">' + marked.parse(markdownToRender) + '</div>';
-            } else {
-                container.innerHTML = '<div class="whitespace-pre-wrap font-sans text-slate-300 text-xs">' + markdownToRender + '</div>';
-            }
-            readmeLoaded = true;
-        } catch (e) {
-            container.innerHTML = '<p class="text-rose-400 text-xs">READMEの描画に失敗しました。</p>';
-        }
-    }
-  </script>
 
   <!-- 外部JavaScriptの読み込み -->
   <script src="app.js"></script>
