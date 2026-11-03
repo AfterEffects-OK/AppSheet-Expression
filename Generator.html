@@ -8,6 +8,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Marked.js for Markdown Rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.js"></script>
   <!-- Google Fonts: Inter -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
   <script>
@@ -2743,7 +2745,7 @@
         });
     }
     
-    // READMEを非同期で取得して表示する関数の一例
+    // READMEを非同期で取得してMarkdownとして表示する関数
     let readmeLoaded = false;
     async function loadReadmeOnce() {
         if (readmeLoaded) return;
@@ -2753,17 +2755,13 @@
             if (!res.ok) throw new Error('取得失敗');
             const text = await res.text();
             
-            // 簡易的にプレーンテキストまたはマークダウンとして流し込む
-            // （もし marked.js 等を導入している場合は marked.parse(text) に置き換え可能）
-            container.innerHTML = `<div class="whitespace-pre-wrap font-sans">${escapeHtml(text)}</div>`;
+            // marked.js を使ってマークダウンをHTMLに変換して流し込む
+            // ※あらかじめHTMLの <head> 内に marked.js の読み込みが必要です
+            container.innerHTML = `<div class="prose prose-invert max-w-none text-slate-300">${marked.parse(text)}</div>`;
             readmeLoaded = true;
         } catch (e) {
-            container.innerHTML = `<p class="text-red-400">README.md の読み込みに失敗しました。</p>`;
+            container.innerHTML = `<p class="text-rose-400 text-xs">README.md の読み込みに失敗しました。</p>`;
         }
-    }
-    
-    function escapeHtml(str) {
-        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
   </script>
   
