@@ -8,6 +8,8 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Marked.js for Markdown Rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.js"></script>
   <!-- Google Fonts: Inter & Fira Code -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
   <script>
@@ -409,12 +411,16 @@
               </button>
           </div>
   
+          <!-- タブヘッダー（READMEタブを追加） -->
           <div class="flex px-6 pt-3 border-b border-slate-800 gap-2 shrink-0 bg-slate-950/40">
               <button type="button" onclick="switchHelpTab('steps')" id="tab-btn-steps" class="px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5">
                   <i data-lucide="list-ordered" class="w-3.5 h-3.5"></i> 基本の使い方
               </button>
               <button type="button" onclick="switchHelpTab('ui')" id="tab-btn-ui" class="px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5">
                   <i data-lucide="layout" class="w-3.5 h-3.5"></i> UI/UX・便利機能
+              </button>
+              <button type="button" onclick="switchHelpTab('readme')" id="tab-btn-readme" class="px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5">
+                  <i data-lucide="file-text" class="w-3.5 h-3.5"></i> README
               </button>
           </div>
           
@@ -470,6 +476,13 @@
                   </div>
               </div>
   
+              <!-- タブ3: README.md 表示用 -->
+              <div id="help-content-readme" class="space-y-3 hidden">
+                  <div id="readme-container" class="bg-slate-950/50 p-4 rounded-xl border border-slate-800/80 leading-relaxed text-slate-300">
+                      <p class="text-slate-400 animate-pulse">README.md を読み込んでいます...</p>
+                  </div>
+              </div>
+  
           </div>
   
           <div class="px-6 py-4 border-t border-slate-800 flex justify-end shrink-0 bg-slate-900">
@@ -479,6 +492,68 @@
           </div>
       </div>
   </div>
+
+  <script>
+    // タブ切り替え関数
+    function switchHelpTab(tab) {
+        const tabs = ['steps', 'ui', 'readme'];
+        
+        tabs.forEach(t => {
+            const btn = document.getElementById(`tab-btn-${t}`);
+            const content = document.getElementById(`help-content-${t}`);
+            if (!btn || !content) return;
+            
+            if (t === tab) {
+                btn.className = "px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5";
+                content.classList.remove('hidden');
+                
+                if (t === 'readme') {
+                    loadReadmeOnce();
+                }
+            } else {
+                btn.className = "px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5";
+                content.classList.add('hidden');
+            }
+        });
+    }
+
+    // README読み込み関数（ファイル取得失敗時はフォールバック表示）
+    let readmeLoaded = false;
+    async function loadReadmeOnce() {
+        if (readmeLoaded) return;
+        const container = document.getElementById('readme-container');
+        if (!container) return;
+
+        const fallbackMarkdown = `# AppSheet Expression Builder
+
+テーブル構造（スキーマ）をもとに、AppSheet の各種関数・数式構文をワンクリックで自動生成・解説するプロフェッショナルな開発者向け Web ツールです。
+
+---
+
+## 概要 (Overview)
+AppSheet アプリ開発における複雑な関数や数式の記述を強力にサポートします。`;
+
+        let markdownToRender = '';
+        try {
+            const response = await fetch('./README.md');
+            if (!response.ok) throw new Error('取得失敗');
+            markdownToRender = await response.text();
+        } catch (error) {
+            markdownToRender = fallbackMarkdown;
+        }
+
+        try {
+            if (typeof marked !== 'undefined' && typeof marked.parse === 'function') {
+                container.innerHTML = '<div class="prose prose-invert max-w-none text-slate-300">' + marked.parse(markdownToRender) + '</div>';
+            } else {
+                container.innerHTML = '<div class="whitespace-pre-wrap font-sans text-slate-300 text-xs">' + markdownToRender + '</div>';
+            }
+            readmeLoaded = true;
+        } catch (e) {
+            container.innerHTML = '<p class="text-rose-400 text-xs">READMEの描画に失敗しました。</p>';
+        }
+    }
+  </script>
 
   <!-- 外部JavaScriptの読み込み -->
   <script src="app.js"></script>
