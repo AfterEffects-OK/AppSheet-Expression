@@ -413,13 +413,12 @@
   
           <!-- タブヘッダー部分 -->
           <div class="flex px-6 pt-3 border-b border-slate-800 gap-2 shrink-0 bg-slate-950/40">
-              <button type="button" onclick="switchHelpTab('steps')" id="tab-btn-steps" ...>
+              <button type="button" onclick="switchHelpTab('steps')" id="tab-btn-steps" class="px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5">
                   <i data-lucide="list-ordered" class="w-3.5 h-3.5"></i> 基本の使い方
               </button>
-              <button type="button" onclick="switchHelpTab('ui')" id="tab-btn-ui" ...>
+              <button type="button" onclick="switchHelpTab('ui')" id="tab-btn-ui" class="px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5">
                   <i data-lucide="layout" class="w-3.5 h-3.5"></i> UI/UX・便利機能
               </button>
-              <!-- ▼ ここを switchHelpTab('readme') に修正します -->
               <button type="button" onclick="switchHelpTab('readme')" id="tab-btn-readme" class="px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5">
                   <i data-lucide="file-text" class="w-3.5 h-3.5"></i> README
               </button>
