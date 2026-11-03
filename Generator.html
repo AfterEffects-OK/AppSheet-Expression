@@ -2816,10 +2816,10 @@ This project is open-source under the [MIT License](LICENSE).
 
         try {
             // marked.js を使ってマークダウンを綺麗なHTMLに変換して流し込む
-            container.innerHTML = \`<div class="prose prose-invert max-w-none text-slate-300">\${marked.parse(readmeMarkdown)}</div>\`;
+            container.innerHTML = `<div class="prose prose-invert max-w-none text-slate-300">${marked.parse(readmeMarkdown)}</div>`;
             readmeLoaded = true;
         } catch (e) {
-            container.innerHTML = \`<p class="text-rose-400 text-xs">READMEの描画に失敗しました。</p>\`;
+            container.innerHTML = `<p class="text-rose-400 text-xs">READMEの描画に失敗しました。</p>`;
         }
     }
   </script>
