@@ -2303,19 +2303,35 @@ document.addEventListener('click', (e) => {
 window.switchHelpTab = (tabName) => {
   const btnSteps = document.getElementById('tab-btn-steps');
   const btnUi = document.getElementById('tab-btn-ui');
+  const btnReadme = document.getElementById('tab-btn-readme'); // 追加
+  
   const contentSteps = document.getElementById('help-content-steps');
   const contentUi = document.getElementById('help-content-ui');
+  const contentReadme = document.getElementById('help-content-readme'); // 追加
 
+  // 一旦すべてのタブ・ボタンを非アクティブ／非表示にする
+  const activeClass = 'px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5';
+  const inactiveClass = 'px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5';
+
+  if (btnSteps) btnSteps.className = inactiveClass;
+  if (btnUi) btnUi.className = inactiveClass;
+  if (btnReadme) btnReadme.className = inactiveClass;
+
+  if (contentSteps) contentSteps.classList.add('hidden');
+  if (contentUi) contentUi.classList.add('hidden');
+  if (contentReadme) contentReadme.classList.add('hidden');
+
+  // 選択されたタブに応じた表示切り替え
   if (tabName === 'steps') {
-    if (btnSteps) btnSteps.className = 'px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5';
-    if (btnUi) btnUi.className = 'px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5';
+    if (btnSteps) btnSteps.className = activeClass;
     if (contentSteps) contentSteps.classList.remove('hidden');
-    if (contentUi) contentUi.classList.add('hidden');
-  } else {
-    if (btnUi) btnUi.className = 'px-4 py-2 text-xs font-semibold rounded-t-xl border-t border-x border-blue-500/50 bg-blue-600/20 text-blue-400 transition cursor-pointer flex items-center gap-1.5';
-    if (btnSteps) btnSteps.className = 'px-4 py-2 text-xs font-medium rounded-t-xl border-t border-x border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center gap-1.5';
+  } else if (tabName === 'ui') {
+    if (btnUi) btnUi.className = activeClass;
     if (contentUi) contentUi.classList.remove('hidden');
-    if (contentSteps) contentSteps.classList.add('hidden');
+  } else if (tabName === 'readme') {
+    if (btnReadme) btnReadme.className = activeClass;
+    if (contentReadme) contentReadme.classList.remove('hidden');
   }
+
   if (typeof lucide !== 'undefined') lucide.createIcons();
 };
